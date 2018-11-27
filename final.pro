@@ -21,17 +21,76 @@ win32 {
     LIBS += -lopengl32 -lglu32
 }
 
-SOURCES += ui/mainwindow.cpp \
-    main.cpp \
+SOURCES += main.cpp \
     glew-1.10.0/src/glew.c \
+    ui/mainwindow.cpp \
     ui/view.cpp \
-    ui/viewformat.cpp
+    lib/BGRA.cpp \
+    lib/ResourceLoader.cpp \
+    shapes/CS123Shape.cpp \
+    shapes/CS123Mesh.cpp \
+    shapes/CS123Cube.cpp \
+    shapes/CS123Cone.cpp \
+    shapes/CS123Cylinder.cpp \
+    shapes/CS123Torus.cpp \
+    shapes/CS123Sphere.cpp \
+    scene/Scene.cpp \
+    scene/SceneObject.cpp \
+    scene/ScenePrimitive.cpp \
+    scene/SceneCamera.cpp \
+    gl/GLDebug.cpp \
+    gl/shaders/Shader.cpp \
+    gl/shaders/CS123Shader.cpp \
+    gl/textures/Texture.cpp \
+    gl/textures/Texture2D.cpp \
+    gl/textures/TextureParameters.cpp \
+    gl/textures/TextureParametersBuilder.cpp \
+    gl/textures/RenderBuffer.cpp \
+    gl/textures/DepthBuffer.cpp \
+    gl/OpenGLShape.cpp \
+    gl/datatype/VBOAttribMarker.cpp \
+    gl/datatype/VBO.cpp \
+    gl/datatype/IBO.cpp \
+    gl/datatype/VAO.cpp \
+    gl/datatype/FBO.cpp \
 
-HEADERS += ui/mainwindow.h \
-    ui_mainwindow.h \
+
+HEADERS += ui_mainwindow.h \
     glew-1.10.0/include/GL/glew.h \
+    ui/mainwindow.h \
     ui/view.h \
-    ui/viewformat.h
+    shapes/CS123Shape.h \
+    shapes/CS123Mesh.h \
+    shapes/CS123Cube.h \
+    shapes/CS123Cone.h \
+    shapes/CS123Cylinder.h \
+    shapes/CS123Torus.h \
+    shapes/CS123Sphere.h \
+    shapes/CS123Primitive.h \
+    lib/SceneData.h \
+    lib/BGRA.h \
+    lib/ResourceLoader.h \
+    scene/Scene.h \
+    scene/SceneObject.h \
+    scene/ScenePrimitive.h \
+    scene/SceneCamera.h \
+    gl/GLDebug.h \
+    gl/shaders/Shader.h \
+    gl/shaders/CS123Shader.h \
+    gl/shaders/ShaderAttribLocations.h \
+    gl/textures/Texture.h \
+    gl/textures/Texture2D.h \
+    gl/textures/TextureParameters.h \
+    gl/textures/TextureParametersBuilder.h \
+    gl/textures/RenderBuffer.h \
+    gl/textures/DepthBuffer.h \
+    gl/OpenGLShape.h \
+    gl/datatype/VBOAttribMarker.h \
+    gl/datatype/VBO.h \
+    gl/datatype/IBO.h \
+    gl/datatype/VAO.h \
+    gl/datatype/FBO.h \
+
 
 FORMS += ui/mainwindow.ui
 INCLUDEPATH += glm ui glew-1.10.0/include
@@ -40,8 +99,9 @@ DEPENDPATH += glm ui glew-1.10.0/include
 DEFINES += _USE_MATH_DEFINES
 DEFINES += TIXML_USE_STL
 DEFINES += GLM_SWIZZLE GLM_FORCE_RADIANS
-OTHER_FILES += shaders/shader.frag \
-    shaders/shader.vert
+OTHER_FILES += \
+    shaders/phong.frag \
+    shaders/phong.vert \
 
 # Don't add the -pg flag unless you know what you are doing. It makes QThreadPool freeze on Mac OS X
 QMAKE_CXXFLAGS_RELEASE -= -O2
@@ -63,11 +123,3 @@ macx {
 
 RESOURCES += \
     resources.qrc
-
-DISTFILES += \
-    shaders/normals/normals.vert \
-    shaders/normals/normals.frag \
-    shaders/normals/normals.gsh \
-    shaders/normals/normalsArrow.gsh \
-    shaders/normals/normalsArrow.frag \
-    shaders/normals/normalsArrow.vert

@@ -2,14 +2,14 @@
 #define VIEW_H
 
 #include "GL/glew.h"
-#include <qgl.h>
+#include <memory>
+#include <QOpenGLWidget>
 #include <QTime>
 #include <QTimer>
+#include "scene/Scene.h"
 
-class View : public QGLWidget
-{
+class View : public QOpenGLWidget {
     Q_OBJECT
-
 public:
     View(QWidget *parent);
     ~View();
@@ -19,16 +19,18 @@ private:
     QTimer m_timer;
     bool m_captureMouse;
 
-    void initializeGL();
-    void paintGL();
-    void resizeGL(int w, int h);
+    std::unique_ptr<Scene> m_scene_ptr;
 
-    void mousePressEvent(QMouseEvent *event);
-    void mouseMoveEvent(QMouseEvent *event);
-    void mouseReleaseEvent(QMouseEvent *event);
+    void initializeGL() override;
+    void paintGL() override;
+    void resizeGL(int w, int h) override;
 
-    void keyPressEvent(QKeyEvent *event);
-    void keyReleaseEvent(QKeyEvent *event);
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
+
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
 
 private slots:
     void tick();

@@ -2,8 +2,8 @@
 
 layout(location = 0) in vec3 position; // Position of the vertex
 layout(location = 1) in vec3 normal;   // Normal of the vertex
-layout(location = 4) in vec2 texCoord; // UV texture coordinates
-layout(location = 9) in float arrowOffset; // Sideways offset for billboarded normal arrows
+layout(location = 5) in vec2 texCoord; // UV texture coordinates
+layout(location = 10) in float arrowOffset; // Sideways offset for billboarded normal arrows
 
 out vec3 color; // Computed color for this vertex
 out vec2 texc;
@@ -26,13 +26,13 @@ uniform vec3 ambient_color;
 uniform vec3 diffuse_color;
 uniform vec3 specular_color;
 uniform float shininess;
+uniform vec2 repeatUV;
 
 uniform bool useLighting;     // Whether to calculate lighting using lighting equation
 uniform bool useArrowOffsets; // True if rendering the arrowhead of a normal for Shapes
 
-void main()
-{
-    texc = texCoord;
+void main() {
+    texc = texCoord * repeatUV;
 
     vec4 position_cameraSpace = v * m * vec4(position, 1.0);
     vec4 normal_cameraSpace = vec4(normalize(mat3(transpose(inverse(v * m))) * normal), 0);
@@ -40,8 +40,7 @@ void main()
     vec4 position_worldSpace = m * vec4(position, 1.0);
     vec4 normal_worldSpace = vec4(normalize(mat3(transpose(inverse(m))) * normal), 0);
 
-    if (useArrowOffsets)
-    {
+    if (useArrowOffsets) {
         // Figure out the axis to use in order for the triangle to be billboarded correctly
         vec3 offsetAxis = normalize(cross(vec3(position_cameraSpace), vec3(normal_cameraSpace)));
         position_cameraSpace += arrowOffset * vec4(offsetAxis, 0);
@@ -49,8 +48,7 @@ void main()
 
     gl_Position = p * position_cameraSpace;
 
-    if (useLighting)
-    {
+    if (useLighting) {
         color = ambient_color.xyz; // Add ambient component
 
         for (int i = 0; i < MAX_LIGHTS; i++) {
@@ -73,9 +71,7 @@ void main()
             float specIntensity = pow(max(0.0, dot(eyeDirection, lightReflection)), shininess);
             color += max (vec3(0), lightColors[i] * specular_color * specIntensity);
         }
-    }
-    else
-    {
+    } else {
         color = ambient_color + diffuse_color;
     }
     color = clamp(color, 0.0, 1.0);

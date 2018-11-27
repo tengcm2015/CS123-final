@@ -1,8 +1,15 @@
 #include <QApplication>
+#include <QSurfaceFormat>
 #include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
+    QSurfaceFormat format;
+    format.setVersion(4, 3);
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    //format.setSampleBuffers(true);
+    QSurfaceFormat::setDefaultFormat(format);
+
     QApplication app(argc, argv);
     MainWindow w;
     bool startFullscreen = false;

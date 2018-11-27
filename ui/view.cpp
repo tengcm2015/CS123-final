@@ -1,12 +1,16 @@
 #include "view.h"
 
-#include "viewformat.h"
 #include <QApplication>
 #include <QKeyEvent>
 #include <iostream>
 
-View::View(QWidget *parent) : QGLWidget(ViewFormat(), parent),
-    m_time(), m_timer(), m_captureMouse(false)
+#include "scene/Scene.h"
+
+View::View(QWidget *parent)
+: QOpenGLWidget(parent)
+, m_time(), m_timer()
+, m_captureMouse(false)
+, m_scene_ptr(nullptr)
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
@@ -51,13 +55,15 @@ void View::initializeGL()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    m_scene_ptr = std::make_unique<Scene>();
 }
 
 void View::paintGL()
 {
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // TODO: Implement the demo rendering here
+    // Get the number of seconds since the last tick (variable update rate)
+    //float seconds = m_time.restart() * 0.001f;
+    m_scene_ptr->render(this, m_time.restart());
 }
 
 void View::resizeGL(int w, int h)
@@ -66,6 +72,8 @@ void View::resizeGL(int w, int h)
     w = static_cast<int>(w / ratio);
     h = static_cast<int>(h / ratio);
     glViewport(0, 0, w, h);
+    m_scene_ptr->getCamera().setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
+    m_scene_ptr->render(this);
 }
 
 void View::mousePressEvent(QMouseEvent *event)
@@ -108,11 +116,6 @@ void View::keyReleaseEvent(QKeyEvent *event)
 
 void View::tick()
 {
-    // Get the number of seconds since the last tick (variable update rate)
-    float seconds = m_time.restart() * 0.001f;
-
-    // TODO: Implement the demo update here
-
     // Flag this view for repainting (Qt will call paintGL() soon after)
     update();
 }
