@@ -28,29 +28,33 @@ Scene::~Scene()
 void Scene::populateScene() {
     // init scene object
     SceneObjectData sphereObjectData;
-    ScenePrimitiveData spherePrimitivedata {
-        .type = PrimitiveType::PRIMITIVE_SPHERE,
-        .material = {
-            .cAmbient  = {0.2f, 0.1f, 0.0f, 1.0f},
-            .cDiffuse  = {1.0f, 0.5f, 0.0f, 1.0f},
-            .cSpecular = {1.0f, 1.0f, 1.0f, 1.0f},
-            .shininess = 64
-        }
-    };
 
-    sphereObjectData.primitives.push_back(spherePrimitivedata);
+    ScenePrimitiveData spherePrimitiveData;\
+    spherePrimitiveData.type = PrimitiveType::PRIMITIVE_SPHERE;
+    spherePrimitiveData.meshfile = "";
+
+    SceneMaterial material;
+    material.cDiffuse  = {1.0f, 0.5f, 0.0f, 1.0f};
+    material.cAmbient  = {0.2f, 0.1f, 0.0f, 1.0f};
+    material.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
+    material.shininess = 64;
+    spherePrimitiveData.material = material;
+
+    sphereObjectData.primitives.push_back(spherePrimitiveData);
     auto sphereObject_ptr = this->createObject(sphereObjectData);
 
-    auto spherePhysics = m_physicsScene.createObject(PhysicsObjectData{
-            .type = GeometryType::GEOMETRY_SPHERE,
-            .flag = PhysicsFlag::FLAG_DYNAMIC,
-            .material = PhysicsMaterial{
-                    .density = 1.0f,
-                    .restitution = 1.0f,
-                    .staticFriction = 0.5f,
-                    .dynamicFriction = 0.4f
-            }
-    });
+    PhysicsObjectData physicsObjectData;
+    physicsObjectData.type = GeometryType::GEOMETRY_SPHERE;
+    physicsObjectData.flag = PhysicsFlag::FLAG_DYNAMIC;
+
+    PhysicsMaterial physicsMaterial;
+    physicsMaterial.density = 1.0f;
+    physicsMaterial.restitution = 1.0f;
+    physicsMaterial.staticFriction = 0.5f;
+    physicsMaterial.dynamicFriction = 0.4f;
+    physicsObjectData.material = physicsMaterial;
+
+    auto spherePhysics = m_physicsScene.createObject(physicsObjectData);
 
     sphereObject_ptr->assignPhysics(spherePhysics);
 }
@@ -63,13 +67,15 @@ void Scene::loadPhongShader() {
 
 void Scene::initializeSceneLight() {
     // Use a white directional light from the upper left corner
-    auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));
-    this->addLight(SceneLightData {
-        .type = LightType::LIGHT_DIRECTIONAL,
-        .dir = lightDirection,
-        .color = {1,1,1,1},
-        .id = 0
-    });
+    auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));\
+
+    SceneLightData lightData;
+    lightData.type = LightType::LIGHT_DIRECTIONAL,
+    lightData.dir = lightDirection,
+    lightData.color = {1,1,1,1},
+    lightData.id = 0;
+
+    this->addLight(lightData);
 }
 
 void Scene::initializePhysics() {
