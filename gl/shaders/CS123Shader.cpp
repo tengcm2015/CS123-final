@@ -1,6 +1,6 @@
 #include "CS123Shader.h"
 
-#include "lib/SceneData.h"
+#include "scene/SceneData.h"
 #include "gl/GLDebug.h"
 
 #include <sstream>

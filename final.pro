@@ -35,9 +35,9 @@ SOURCES += main.cpp \
     shapes/CS123Torus.cpp \
     shapes/CS123Sphere.cpp \
     scene/Scene.cpp \
+    scene/SceneCamera.cpp \
     scene/SceneObject.cpp \
     scene/ScenePrimitive.cpp \
-    scene/SceneCamera.cpp \
     gl/GLDebug.cpp \
     gl/shaders/Shader.cpp \
     gl/shaders/CS123Shader.cpp \
@@ -53,6 +53,8 @@ SOURCES += main.cpp \
     gl/datatype/IBO.cpp \
     gl/datatype/VAO.cpp \
     gl/datatype/FBO.cpp \
+    physics/PhysicsObject.cpp \
+    physics/PhysicsScene.cpp \
 
 
 HEADERS += ui_mainwindow.h \
@@ -67,13 +69,14 @@ HEADERS += ui_mainwindow.h \
     shapes/CS123Torus.h \
     shapes/CS123Sphere.h \
     shapes/CS123Primitive.h \
-    lib/SceneData.h \
     lib/BGRA.h \
     lib/ResourceLoader.h \
+    lib/CommonData.h \
     scene/Scene.h \
+    scene/SceneCamera.h \
+    scene/SceneData.h \
     scene/SceneObject.h \
     scene/ScenePrimitive.h \
-    scene/SceneCamera.h \
     gl/GLDebug.h \
     gl/shaders/Shader.h \
     gl/shaders/CS123Shader.h \
@@ -90,6 +93,9 @@ HEADERS += ui_mainwindow.h \
     gl/datatype/IBO.h \
     gl/datatype/VAO.h \
     gl/datatype/FBO.h \
+    physics/PhysicsData.h \
+    physics/PhysicsObject.h \
+    physics/PhysicsScene.h \
 
 
 FORMS += ui/mainwindow.ui

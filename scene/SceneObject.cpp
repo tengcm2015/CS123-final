@@ -1,15 +1,21 @@
 #include "SceneObject.h"
-#include "lib/SceneData.h"
+#include "SceneData.h"
 
+#include "lib/CommonData.h"
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
+
+using namespace CS123::UTIL;
+using namespace CS123::PHYSICS;
 
 SceneObject::SceneObject()
 : m_modelTransform(1.0f)
+, m_physicsObject_ptr()
 {
 }
 
 SceneObject::SceneObject(const SceneObjectData &data)
 : m_modelTransform(1.0f)
+, m_physicsObject_ptr()
 {
     for (auto &t: data.transformations) {
         switch (t.type) {
@@ -62,10 +68,19 @@ SceneObject& SceneObject::assignChild(const std::shared_ptr<ScenePrimitive> &cp)
     return *this;
 }
 
+SceneObject &SceneObject::assignPhysics(const std::shared_ptr<PhysicsObject> &op) {
+    m_physicsObject_ptr = op;
+    return *this;
+}
+
 SceneObject& SceneObject::update() {
     glm::mat4 transform(1.0f);
     for (auto &matrix: m_transformMatrices)
         transform = matrix * transform;
+
+    if (auto op = m_physicsObject_ptr.lock())
+        m_modelTransform = op->getTransformation();
+
     transform = m_modelTransform * transform;
 
     for (auto &pp: m_primitive_ptrs) {
@@ -80,4 +95,3 @@ SceneObject& SceneObject::update() {
 
     return *this;
 }
-

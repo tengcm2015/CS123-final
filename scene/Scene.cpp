@@ -8,6 +8,7 @@
 #define MAX_NUM_LIGHTS 10
 
 using namespace CS123::GL;
+using namespace CS123::PHYSICS;
 
 Scene::Scene()
 : m_camera()
@@ -15,6 +16,7 @@ Scene::Scene()
     setGlobal({1,1,1,1});
     initializeCamera();
     initializeSceneLight();
+    initializePhysics();
     loadPhongShader();
     populateScene();
 }
@@ -37,7 +39,20 @@ void Scene::populateScene() {
     };
 
     sphereObjectData.primitives.push_back(spherePrimitivedata);
-    this->addObject(sphereObjectData)->update();
+    auto sphereObject_ptr = this->createObject(sphereObjectData);
+
+    auto spherePhysics = m_physicsScene.createObject(PhysicsObjectData{
+            .type = GeometryType::GEOMETRY_SPHERE,
+            .flag = PhysicsFlag::FLAG_DYNAMIC,
+            .material = PhysicsMaterial{
+                    .density = 1.0f,
+                    .restitution = 1.0f,
+                    .staticFriction = 0.5f,
+                    .dynamicFriction = 0.4f
+            }
+    });
+
+    sphereObject_ptr->assignPhysics(spherePhysics);
 }
 
 void Scene::loadPhongShader() {
@@ -54,6 +69,14 @@ void Scene::initializeSceneLight() {
         .dir = lightDirection,
         .color = {1,1,1,1},
         .id = 0
+    });
+}
+
+void Scene::initializePhysics() {
+    m_physicsScene.setGlobal(PhysicsGlobalData {
+        .MPU = 10.0f,
+        .damping = 0.0,
+        .gravity = {0, -STD_G, 0}
     });
 }
 
@@ -87,6 +110,12 @@ void Scene::setLights() {
 }
 
 void Scene::render(View *context, int msecLapsed) {
+    // update physics
+    m_physicsScene.simulate(msecLapsed);
+    for (auto &op: m_object_ptrs)
+        op->update();
+
+    // render scene
     glClearColor(0, 0, 0, 0);
 
     m_phongShader->bind();
@@ -132,7 +161,7 @@ void Scene::renderGeometry(Shader* shader) {
     }
 }
 
-std::shared_ptr<SceneObject> Scene::addObject(const SceneObjectData &data)
+std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data)
 {
     auto obj_ptr = std::make_shared<SceneObject>(data);
     m_object_ptrs.push_back(obj_ptr);
@@ -140,15 +169,15 @@ std::shared_ptr<SceneObject> Scene::addObject(const SceneObjectData &data)
     SceneObject &sceneObject = *obj_ptr;
 
     for (auto &p: data.primitives)
-        sceneObject.assignChild(this->addPrimitive(p));
+        sceneObject.assignChild(this->createPrimitive(p));
 
     for (auto &c: data.children)
-        sceneObject.assignChild(this->addObject(c));
+        sceneObject.assignChild(this->createObject(c));
 
     return obj_ptr;
 }
 
-std::shared_ptr<ScenePrimitive> Scene::addPrimitive(const ScenePrimitiveData &scenePrimitive) {
+std::shared_ptr<ScenePrimitive> Scene::createPrimitive(const ScenePrimitiveData &scenePrimitive) {
     auto primitive_ptr = std::make_shared<ScenePrimitive>(scenePrimitive);
     m_primitive_ptrs.push_back(primitive_ptr);
     return primitive_ptr;

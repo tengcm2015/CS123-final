@@ -1,10 +1,3 @@
-/**
- * @file   CamtransCamera.cpp
- *
- * This is the perspective camera class you will need to fill in for the Camtrans lab.  See the
- * lab handout for more details.
- */
-
 #include "SceneCamera.h"
 
 SceneCamera::SceneCamera()

@@ -1,13 +1,15 @@
-#ifndef PROJECT_SCENE_H
-#define PROJECT_SCENE_H
+#ifndef SCENE_H
+#define SCENE_H
 
-#include <memory>
-
-#include "gl/shaders/CS123Shader.h"
-#include "lib/SceneData.h"
+#include "SceneData.h"
 #include "SceneObject.h"
 #include "ScenePrimitive.h"
 #include "SceneCamera.h"
+
+#include "gl/shaders/CS123Shader.h"
+#include "physics/PhysicsScene.h"
+
+#include <memory>
 
 class View;
 
@@ -30,9 +32,11 @@ private:
     std::vector<std::shared_ptr<SceneObject>> m_object_ptrs;
     std::vector<std::shared_ptr<ScenePrimitive>> m_primitive_ptrs;
 
-    std::shared_ptr<SceneObject> addObject(const SceneObjectData &data);
+    CS123::PHYSICS::PhysicsScene m_physicsScene;
 
-    std::shared_ptr<ScenePrimitive> addPrimitive(const ScenePrimitiveData &data);
+    std::shared_ptr<SceneObject> createObject(const SceneObjectData &data);
+
+    std::shared_ptr<ScenePrimitive> createPrimitive(const ScenePrimitiveData &data);
 
     void addLight(const SceneLightData &sceneLight);
 
@@ -43,6 +47,8 @@ private:
     void initializeSceneLight();
 
     void initializeCamera();
+
+    void initializePhysics();
 
     void populateScene();
 

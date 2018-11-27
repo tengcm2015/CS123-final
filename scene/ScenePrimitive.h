@@ -6,7 +6,7 @@
 #include <QImage>
 
 #include "lib/BGRA.h"
-#include "lib/SceneData.h"
+#include "SceneData.h"
 #include "gl/textures/Texture2D.h"
 
 class CS123Primitive;
