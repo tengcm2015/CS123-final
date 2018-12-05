@@ -4,6 +4,7 @@
 #include <QKeyEvent>
 #include <iostream>
 
+#include "SceneBuilder.h"
 #include "scene/Scene.h"
 
 View::View(QWidget *parent)
@@ -56,7 +57,9 @@ void View::initializeGL()
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+    // create scene
     m_scene_ptr = std::make_unique<Scene>();
+    SceneBuilder::initScene(*m_scene_ptr);
 }
 
 void View::paintGL()

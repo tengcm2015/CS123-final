@@ -18,25 +18,27 @@ public:
 
     glm::vec4 getPosition() const { return getTransformation() * glm::vec4(0,0,0,1); }
 
-    PhysicsObject& setModelTransform(const glm::mat4 &t);
+    PhysicsFlag     getFlag()     const { return m_data.flag; }
+    GeometryType    getGeometry() const { return m_data.type; }
+    PhysicsMaterial getMaterial() const { return m_data.material; }
+
+    PhysicsObject& setFlag    (PhysicsFlag flag)  { m_data.flag = flag; return *this; }
+    PhysicsObject& setGeomerty(GeometryType type) { m_data.type = type; return *this; }
+
+    PhysicsObject& setModelTransform (const glm::mat4 &t);
     PhysicsObject& setKinematicTarget(const glm::mat4 &t);
 
-    PhysicsObject& setFlag(PhysicsFlag flag) { m_flag = flag; return *this; }
+    glm::vec3 getLinearVelocity () const { return m_linearVelocity; }
+    glm::vec3 getAngularVelocity() const { return m_angularVelocity; }
 
-    glm::vec3 getLinearVelocity() { return m_linearVelocity; }
-    glm::vec3 getAngularVelocity() { return m_angularVelocity; }
-
-    PhysicsObject& setLinearVelocity(glm::vec3 &v) { m_linearVelocity = v; return *this; }
-    PhysicsObject& setAngularVelocity(glm::vec3 &v) { m_angularVelocity = v; return *this; }
+    PhysicsObject& setLinearVelocity (glm::vec3 const &v) { m_linearVelocity = v;  return *this; }
+    PhysicsObject& setAngularVelocity(glm::vec3 const &v) { m_angularVelocity = v; return *this; }
 
 private:
     // PhysicsScene can access private members of PhysicsObject
     friend class PhysicsScene;
 
-    PhysicsFlag m_flag;
-
     PhysicsObjectData m_data;
-    PhysicsMaterial m_material;
 
     glm::vec3 m_linearVelocity;
     glm::vec3 m_angularVelocity;

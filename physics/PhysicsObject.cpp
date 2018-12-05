@@ -8,14 +8,14 @@ namespace CS123 { namespace PHYSICS {
 PhysicsObject::PhysicsObject()
 : m_modelTransform()
 , m_physicsTransform()
-, m_flag(PhysicsFlag::FLAG_STATIC)
+, m_data()
 {
 }
 
 PhysicsObject::PhysicsObject(const PhysicsObjectData &data)
 : m_modelTransform()
 , m_physicsTransform()
-, m_flag(PhysicsFlag::FLAG_STATIC)
+, m_data(data)
 {
     for (auto &t: data.transformations) {
         switch (t.type) {

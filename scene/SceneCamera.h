@@ -3,7 +3,7 @@
 
 #include "glm/glm.hpp"
 
-class SceneCamera{
+class SceneCamera {
 public:
     // Initialize your camera.
     SceneCamera();

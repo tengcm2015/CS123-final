@@ -6,6 +6,7 @@
 #include "shapes/CS123Cylinder.h"
 #include "shapes/CS123Mesh.h"
 #include "shapes/CS123Sphere.h"
+#include "shapes/CS123Plane.h"
 #include "shapes/CS123Torus.h"
 #include "gl/textures/TextureParametersBuilder.h"
 //#include "gl/shapes/CS123Primitive.h"
@@ -38,10 +39,10 @@ struct textureCacheNode {
 
 std::map<std::string, textureCacheNode> textureCache;
 
-ScenePrimitive::ScenePrimitive(const ScenePrimitiveData &scenePrimitive)
+ScenePrimitive::ScenePrimitive(const ScenePrimitiveData &data)
 : m_p1(-1), m_p2(-1), m_p3(-1)
 , m_modelTransform(1.0f)
-, m_data(scenePrimitive)
+, m_data(data)
 , m_textureFileName()
 {
     auto &material = m_data.material;
@@ -115,6 +116,11 @@ ScenePrimitive& ScenePrimitive::update(int p1, int p2, float p3) {
                 m_primitive_ptr = std::make_unique<CS123Sphere>(p1, p2);
             break;
 
+        case PrimitiveType::PRIMITIVE_PLANE:
+            if (p1 != m_p1)
+                m_primitive_ptr = std::make_unique<CS123Plane>(p1);
+            break;
+
         case PrimitiveType::PRIMITIVE_MESH:
             // TODO: mesh?
             m_primitive_ptr = std::make_unique<CS123Mesh>();
@@ -157,6 +163,10 @@ bool ScenePrimitive::castRay(const glm::vec4 &startPoint, const glm::vec4 &world
 
         case PrimitiveType::PRIMITIVE_SPHERE:
             hit = CS123Sphere::castRay(p, ray, min_t, normal, uv);
+            break;
+
+        case PrimitiveType::PRIMITIVE_PLANE:
+            hit = CS123Plane::castRay(p, ray, min_t, normal, uv);
             break;
 
         case PrimitiveType::PRIMITIVE_MESH:

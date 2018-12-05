@@ -12,82 +12,17 @@ using namespace CS123::PHYSICS;
 
 Scene::Scene()
 : m_camera()
+, m_globalData{1,1,1,1}
+, m_physicsScene()
 {
-    setGlobal({1,1,1,1});
-    initializeCamera();
-    initializeSceneLight();
-    initializePhysics();
-    loadPhongShader();
-    populateScene();
-}
-
-Scene::~Scene()
-{
-}
-
-void Scene::populateScene() {
-    // init scene object
-    SceneObjectData sphereObjectData;
-
-    ScenePrimitiveData spherePrimitiveData;\
-    spherePrimitiveData.type = PrimitiveType::PRIMITIVE_SPHERE;
-    spherePrimitiveData.meshfile = "";
-
-    SceneMaterial material;
-    material.cDiffuse  = {1.0f, 0.5f, 0.0f, 1.0f};
-    material.cAmbient  = {0.2f, 0.1f, 0.0f, 1.0f};
-    material.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
-    material.shininess = 64;
-    spherePrimitiveData.material = material;
-
-    sphereObjectData.primitives.push_back(spherePrimitiveData);
-    auto sphereObject_ptr = this->createObject(sphereObjectData);
-
-    PhysicsObjectData physicsObjectData;
-    physicsObjectData.type = GeometryType::GEOMETRY_SPHERE;
-    physicsObjectData.flag = PhysicsFlag::FLAG_DYNAMIC;
-
-    PhysicsMaterial physicsMaterial;
-    physicsMaterial.density = 1.0f;
-    physicsMaterial.restitution = 1.0f;
-    physicsMaterial.staticFriction = 0.5f;
-    physicsMaterial.dynamicFriction = 0.4f;
-    physicsObjectData.material = physicsMaterial;
-
-    auto spherePhysics = m_physicsScene.createObject(physicsObjectData);
-
-    sphereObject_ptr->assignPhysics(spherePhysics);
-}
-
-void Scene::loadPhongShader() {
+    // loaf phong shader
     std::string vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.vert");
     std::string fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.frag");
     m_phongShader = std::make_unique<CS123Shader>(vertexSource, fragmentSource);
 }
 
-void Scene::initializeSceneLight() {
-    // Use a white directional light from the upper left corner
-    auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));\
-
-    SceneLightData lightData;
-    lightData.type = LightType::LIGHT_DIRECTIONAL,
-    lightData.dir = lightDirection,
-    lightData.color = {1,1,1,1},
-    lightData.id = 0;
-
-    this->addLight(lightData);
-}
-
-void Scene::initializePhysics() {
-    m_physicsScene.setGlobal(PhysicsGlobalData {
-        .MPU = 10.0f,
-        .damping = 0.0,
-        .gravity = {0, -STD_G, 0}
-    });
-}
-
-void Scene::initializeCamera() {
-    /* use default for now */
+Scene::~Scene()
+{
 }
 
 void Scene::setPhongSceneUniforms() {
@@ -196,5 +131,3 @@ void Scene::addLight(const SceneLightData &sceneLight) {
 void Scene::setGlobal(const SceneGlobalData &global) {
     m_globalData = global;
 }
-
-

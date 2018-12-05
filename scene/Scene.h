@@ -20,6 +20,17 @@ public:
     virtual ~Scene();
 
     SceneCamera &getCamera() { return m_camera; }
+
+    CS123::PHYSICS::PhysicsScene &getPhysicsScene() { return m_physicsScene; }
+
+    std::shared_ptr<SceneObject> createObject(const SceneObjectData &data);
+
+    std::shared_ptr<ScenePrimitive> createPrimitive(const ScenePrimitiveData &data);
+
+    void addLight(const SceneLightData &sceneLight);
+
+    void setGlobal(const SceneGlobalData &global);
+
     void render(View *context, int msecLapsed = 0);
 
 private:
@@ -33,24 +44,6 @@ private:
     std::vector<std::shared_ptr<ScenePrimitive>> m_primitive_ptrs;
 
     CS123::PHYSICS::PhysicsScene m_physicsScene;
-
-    std::shared_ptr<SceneObject> createObject(const SceneObjectData &data);
-
-    std::shared_ptr<ScenePrimitive> createPrimitive(const ScenePrimitiveData &data);
-
-    void addLight(const SceneLightData &sceneLight);
-
-    void setGlobal(const SceneGlobalData &global);
-
-    void loadPhongShader();
-
-    void initializeSceneLight();
-
-    void initializeCamera();
-
-    void initializePhysics();
-
-    void populateScene();
 
     void setPhongSceneUniforms();
 

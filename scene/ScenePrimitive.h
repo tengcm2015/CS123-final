@@ -13,7 +13,7 @@ class CS123Primitive;
 
 class ScenePrimitive {
 public:
-    explicit ScenePrimitive(const ScenePrimitiveData &scenePrimitive);
+    explicit ScenePrimitive(const ScenePrimitiveData &data);
 
     virtual ~ScenePrimitive();
 

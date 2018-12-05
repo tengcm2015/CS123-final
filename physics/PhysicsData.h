@@ -24,6 +24,7 @@ enum class GeometryType {
     GEOMETRY_CYLINDER,
     GEOMETRY_TORUS,
     GEOMETRY_SPHERE,
+    GEOMETRY_PLANE,
     GEOMETRY_MESH
 };
 

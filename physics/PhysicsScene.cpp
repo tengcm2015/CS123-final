@@ -18,7 +18,10 @@ void PhysicsScene::simulate(int msecLapsed) {
     // TODO: update objects' translation matrices based on physics
 
     for (auto &op: m_object_ptrs) {
-       if (op->getPosition().y < -5)
+        if (op->getFlag() != PhysicsFlag::FLAG_DYNAMIC)
+            continue;
+
+        if (op->getPosition().y < -5)
             op->m_physicsTransform = glm::translate(glm::vec3(0, 2, 0));
         else
             op->m_physicsTransform = glm::translate(glm::vec3(0, -0.01f * msecLapsed, 0)) * op->m_physicsTransform;
