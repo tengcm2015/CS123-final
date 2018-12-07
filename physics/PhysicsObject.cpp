@@ -6,30 +6,34 @@ using namespace CS123::UTIL;
 namespace CS123 { namespace PHYSICS {
 
 PhysicsObject::PhysicsObject()
-: m_modelTransform()
+: m_data()
+, m_linearVelocity(0.0f)
+, m_angularVelocity(0.0f)
 , m_physicsTransform()
-, m_data()
+, m_targetTransform()
 {
 }
 
 PhysicsObject::PhysicsObject(const PhysicsObjectData &data)
-: m_modelTransform()
+: m_data(data)
+, m_linearVelocity(0.0f)
+, m_angularVelocity(0.0f)
 , m_physicsTransform()
-, m_data(data)
+, m_targetTransform()
 {
     for (auto &t: data.transformations) {
         switch (t.type) {
             case TransformationType::TRANSFORMATION_TRANSLATE:
-                m_modelTransform = glm::translate(t.translate) * m_modelTransform;
+                m_physicsTransform = glm::translate(t.translate) * m_physicsTransform;
                 break;
             case TransformationType::TRANSFORMATION_ROTATE:
-                m_modelTransform = glm::rotate(t.angle, t.rotate);
+                m_physicsTransform = glm::rotate(t.angle, t.rotate) * m_physicsTransform;
                 break;
             case TransformationType::TRANSFORMATION_SCALE:
-                m_modelTransform = glm::scale(t.scale);
+                m_physicsTransform = glm::scale(t.scale) * m_physicsTransform;
                 break;
             case TransformationType::TRANSFORMATION_MATRIX:
-                m_modelTransform = t.matrix;
+                m_physicsTransform = t.matrix * m_physicsTransform;
         }
     }
 }
@@ -37,18 +41,5 @@ PhysicsObject::PhysicsObject(const PhysicsObjectData &data)
 PhysicsObject::~PhysicsObject()
 {
 }
-
-PhysicsObject& PhysicsObject::setModelTransform(const glm::mat4 &t) {
-    m_modelTransform = t;
-    return *this;
-}
-
-// setModelTransform will teleport the object to the destination, which is unnatural
-// instead here we will make this object interact with other objects along the way
-PhysicsObject &PhysicsObject::setKinematicTarget(const glm::mat4 &t) {
-    m_targetTransform = t;
-    return *this;
-}
-
 
 }}

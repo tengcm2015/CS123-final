@@ -14,9 +14,9 @@ public:
 
     virtual ~PhysicsObject();
 
-    glm::mat4 getTransformation() const { return m_physicsTransform * m_modelTransform; }
+    glm::mat4 getTransformation() const { return m_physicsTransform; }
 
-    glm::vec4 getPosition() const { return getTransformation() * glm::vec4(0,0,0,1); }
+    glm::vec4 getPosition() const { return m_physicsTransform * glm::vec4(0,0,0,1); }
 
     PhysicsFlag     getFlag()     const { return m_data.flag; }
     GeometryType    getGeometry() const { return m_data.type; }
@@ -25,8 +25,13 @@ public:
     PhysicsObject& setFlag    (PhysicsFlag flag)  { m_data.flag = flag; return *this; }
     PhysicsObject& setGeomerty(GeometryType type) { m_data.type = type; return *this; }
 
-    PhysicsObject& setModelTransform (const glm::mat4 &t);
-    PhysicsObject& setKinematicTarget(const glm::mat4 &t);
+
+    PhysicsObject& setModelTransform (const glm::mat4 &t) { m_physicsTransform = t; return *this; }
+
+    // setModelTransform will teleport the object to the destination, which is unnatural
+    // instead here we will make this object interact with other objects along the way
+    PhysicsObject& setKinematicTarget(const glm::mat4 &t) { m_targetTransform = t;  return *this; }
+
 
     glm::vec3 getLinearVelocity () const { return m_linearVelocity; }
     glm::vec3 getAngularVelocity() const { return m_angularVelocity; }
@@ -43,9 +48,7 @@ private:
     glm::vec3 m_linearVelocity;
     glm::vec3 m_angularVelocity;
 
-    glm::mat4 m_modelTransform;
     glm::mat4 m_physicsTransform;
-
     glm::mat4 m_targetTransform;
 };
 
