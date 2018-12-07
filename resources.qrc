@@ -2,5 +2,8 @@
     <qresource prefix="/shaders">
         <file alias="phong.frag">shaders/phong.frag</file>
         <file alias="phong.vert">shaders/phong.vert</file>
+        <file alias="rayMarcher.frag">shaders/rayMarcher.frag</file>
+        <file alias="FXAA.frag">shaders/FXAA.frag</file>
+        <file alias="quad.vert">shaders/quad.vert</file>
     </qresource>
 </RCC>

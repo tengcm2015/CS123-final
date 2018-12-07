@@ -50,7 +50,7 @@ void OpenGLShape::buildVAO() {
 }
 
 void OpenGLShape::draw() {
-    checkError();
+    checkGLError("GL is in an error state before painting.");
     if (m_VAO) {
         m_VAO->bind();
         m_VAO->draw();

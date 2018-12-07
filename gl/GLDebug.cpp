@@ -7,10 +7,10 @@
 
 namespace CS123 { namespace GL {
 
-void checkError() {
+void checkGLError(const std::string &errmsg) {
     GLenum err = glGetError();
     if (err != GL_NO_ERROR) {
-        std::cerr << "GL is in an error state before painting." << std::endl;
+        std::cerr << errmsg << std::endl;
         printGLErrorCodeInEnglish(err);
     }
 }

@@ -72,10 +72,10 @@ void View::paintGL()
 void View::resizeGL(int w, int h)
 {
     float ratio = static_cast<QGuiApplication *>(QCoreApplication::instance())->devicePixelRatio();
-    w = static_cast<int>(w / ratio);
-    h = static_cast<int>(h / ratio);
+    w = static_cast<int>(w * ratio);
+    h = static_cast<int>(h * ratio);
     glViewport(0, 0, w, h);
-    m_scene_ptr->getCamera().setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
+    m_scene_ptr->setScreenSize(w, h);
     m_scene_ptr->render(this);
 }
 

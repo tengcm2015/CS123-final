@@ -40,9 +40,10 @@ SOURCES += main.cpp \
     scene/SceneCamera.cpp \
     scene/SceneObject.cpp \
     scene/ScenePrimitive.cpp \
+    gl/FullScreenQuad.cpp \
     gl/GLDebug.cpp \
     gl/shaders/Shader.cpp \
-    gl/shaders/CS123Shader.cpp \
+    gl/shaders/PhongShader.cpp \
     gl/textures/Texture.cpp \
     gl/textures/Texture2D.cpp \
     gl/textures/TextureParameters.cpp \
@@ -81,9 +82,10 @@ HEADERS += ui_mainwindow.h \
     scene/SceneData.h \
     scene/SceneObject.h \
     scene/ScenePrimitive.h \
+    gl/FullScreenQuad.h \
     gl/GLDebug.h \
     gl/shaders/Shader.h \
-    gl/shaders/CS123Shader.h \
+    gl/shaders/PhongShader.h \
     gl/shaders/ShaderAttribLocations.h \
     gl/textures/Texture.h \
     gl/textures/Texture2D.h \
@@ -112,6 +114,9 @@ DEFINES += GLM_SWIZZLE GLM_FORCE_RADIANS
 OTHER_FILES += \
     shaders/phong.frag \
     shaders/phong.vert \
+    shaders/quad.vert \
+    shaders/rayMarcher.frag \
+    shaders/FXAA.frag \
 
 # Don't add the -pg flag unless you know what you are doing. It makes QThreadPool freeze on Mac OS X
 QMAKE_CXXFLAGS_RELEASE -= -O2

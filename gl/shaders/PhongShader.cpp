@@ -1,4 +1,4 @@
-#include "CS123Shader.h"
+#include "PhongShader.h"
 
 #include "scene/SceneData.h"
 #include "gl/GLDebug.h"
@@ -8,12 +8,12 @@
 namespace CS123 { namespace GL {
 
 
-CS123Shader::CS123Shader(const std::string &vertexSource, const std::string &fragmentSource) :
+PhongShader::PhongShader(const std::string &vertexSource, const std::string &fragmentSource) :
     Shader(vertexSource, fragmentSource)
 {
 }
 
-CS123Shader::CS123Shader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource) :
+PhongShader::PhongShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource) :
     Shader(vertexSource, geometrySource, fragmentSource)
 {
 }
@@ -22,14 +22,14 @@ glm::vec3 toGLMVec3(const SceneColor &c) {
     return glm::vec3(c.r, c.g, c.b);
 }
 
-void CS123Shader::applyMaterial(const SceneMaterial &material) {
+void PhongShader::applyMaterial(const SceneMaterial &material) {
     setUniform("ambient_color", toGLMVec3(material.cAmbient));
     setUniform("diffuse_color", toGLMVec3(material.cDiffuse));
     setUniform("specular_color", toGLMVec3(material.cSpecular));
     setUniform("shininess", material.shininess);
 }
 
-void CS123Shader::setLight(const SceneLightData &light) {
+void PhongShader::setLight(const SceneLightData &light) {
     bool ignoreLight = false;
 
     GLint lightType;

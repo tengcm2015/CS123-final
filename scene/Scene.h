@@ -6,7 +6,9 @@
 #include "ScenePrimitive.h"
 #include "SceneCamera.h"
 
-#include "gl/shaders/CS123Shader.h"
+#include "gl/FullScreenQuad.h"
+#include "gl/datatype/FBO.h"
+#include "gl/shaders/PhongShader.h"
 #include "physics/PhysicsScene.h"
 
 #include <memory>
@@ -31,11 +33,18 @@ public:
 
     void setGlobal(const SceneGlobalData &global);
 
+    void setScreenSize(int w, int h);
+
     void render(View *context, int msecLapsed = 0);
 
 private:
+    int m_width, m_height;
     SceneCamera m_camera;
-    std::unique_ptr<CS123::GL::CS123Shader> m_phongShader;
+
+    CS123::GL::FullScreenQuad m_fullScreenQuad;
+    std::unique_ptr<CS123::GL::FBO> m_tmp_FBO;
+    std::unique_ptr<CS123::GL::PhongShader> m_phongShader;
+    std::unique_ptr<CS123::GL::Shader> m_filterShader;
 
     SceneGlobalData m_globalData;
     std::vector<SceneLightData> m_sceneLights;

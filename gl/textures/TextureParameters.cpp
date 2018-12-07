@@ -23,10 +23,12 @@ void TextureParameters::applyTo(const Texture2D &texture) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapEnum);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapEnum);
 
-    GLfloat fLargest;
-    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
-    glGenerateMipmap(texture.id());
-    glTexParameterf(texture.id(), GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+//    GLfloat fLargest;
+//    glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &fLargest);
+//    glGenerateMipmap(texture.id());
+//    glTexParameterf(texture.id(), GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+//
+//    checkGLError("apply anisotropy error.");
 
     texture.unbind();
 }

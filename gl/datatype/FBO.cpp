@@ -12,11 +12,11 @@ namespace CS123 { namespace GL {
 
 FBO::FBO(int numberOfColorAttachments, DEPTH_STENCIL_ATTACHMENT attachmentType, int width, int height,
          TextureParameters::WRAP_METHOD wrapMethod,
-         TextureParameters::FILTER_METHOD filterMethod, GLenum type) :
-    m_depthStencilAttachmentType(attachmentType),
-    m_handle(0),
-    m_width(width),
-    m_height(height)
+         TextureParameters::FILTER_METHOD filterMethod, GLenum type)
+: m_depthStencilAttachmentType(attachmentType)
+, m_handle(0)
+, m_width(width)
+, m_height(height)
 {
     // Generate a new framebuffer using m_handle
     glGenFramebuffers(1, &m_handle);
@@ -41,7 +41,7 @@ void FBO::generateColorAttachments(int count, TextureParameters::WRAP_METHOD wra
                                    TextureParameters::FILTER_METHOD filterMethod, GLenum type) {
     std::vector<GLenum> buffers;
     for (int i = 0; i < count; i++) {
-        generateColorAttachment(i, wrapMethod, filterMethod, type);
+        this->generateColorAttachment(i, wrapMethod, filterMethod, type);
         buffers.push_back(GL_COLOR_ATTACHMENT0 + i);
     }
     glDrawBuffers(count, buffers.data());
