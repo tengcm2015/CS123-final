@@ -35,7 +35,7 @@ SOURCES += main.cpp \
     shapes/CS123Cylinder.cpp \
     shapes/CS123Torus.cpp \
     shapes/CS123Sphere.cpp \
-    shapes/CS123Plane.cpp \
+    shapes/CS123Quad.cpp \
     scene/Scene.cpp \
     scene/SceneCamera.cpp \
     scene/SceneObject.cpp \
@@ -44,6 +44,7 @@ SOURCES += main.cpp \
     gl/GLDebug.cpp \
     gl/shaders/Shader.cpp \
     gl/shaders/PhongShader.cpp \
+    gl/shaders/RayMarchShader.cpp \
     gl/textures/Texture.cpp \
     gl/textures/Texture2D.cpp \
     gl/textures/TextureParameters.cpp \
@@ -72,7 +73,7 @@ HEADERS += ui_mainwindow.h \
     shapes/CS123Cylinder.h \
     shapes/CS123Torus.h \
     shapes/CS123Sphere.h \
-    shapes/CS123Plane.cpp \
+    shapes/CS123Quad.cpp \
     shapes/CS123Primitive.h \
     lib/BGRA.h \
     lib/ResourceLoader.h \
@@ -86,6 +87,7 @@ HEADERS += ui_mainwindow.h \
     gl/GLDebug.h \
     gl/shaders/Shader.h \
     gl/shaders/PhongShader.h \
+    gl/shaders/RayMarchShader.h \
     gl/shaders/ShaderAttribLocations.h \
     gl/textures/Texture.h \
     gl/textures/Texture2D.h \

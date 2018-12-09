@@ -1,10 +1,10 @@
-#include "CS123Plane.h"
+#include "CS123Quad.h"
 
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
 
 #define PI static_cast<float>(M_PI)
 
-CS123Plane::CS123Plane(int stack, const glm::mat4 &transform)
+CS123Quad::CS123Quad(int stack, const glm::mat4 &transform)
 : CS123Mesh(transform)
 {
     stack = std::max(1, stack);
@@ -36,11 +36,11 @@ CS123Plane::CS123Plane(int stack, const glm::mat4 &transform)
 
 }
 
-CS123Plane::~CS123Plane()
+CS123Quad::~CS123Quad()
 {
 }
 
-bool CS123Plane::castRay(const glm::vec4 &p, const glm::vec4 &ray, float &min_t, glm::vec4 &normal, glm::vec2 &uv) {
+bool CS123Quad::castRay(const glm::vec4 &p, const glm::vec4 &ray, float &min_t, glm::vec4 &normal, glm::vec2 &uv) {
     bool hit = false;
     min_t = std::numeric_limits<float>::infinity();
 

@@ -103,16 +103,27 @@ void checkShaderCompilationStatus(GLuint shaderID) {
         glGetShaderInfoLog(shaderID, maxLength, &maxLength, &errorLog[0]);
 
         std::cerr << &errorLog[0] << std::endl;
+
     } else {
         std::cerr << "Shader compiled." << std::endl;
     }
 }
 
-void checkShaderLinkStatus(GLuint shaderProgramID) {
+void checkShaderLinkStatus(GLuint programID) {
     GLint linked;
-    glGetProgramiv(shaderProgramID, GL_LINK_STATUS, &linked);
+    glGetProgramiv(programID, GL_LINK_STATUS, &linked);
     if (linked == GL_FALSE) {
         std::cerr << "Shader failed to link" << std::endl;
+
+        GLint maxLength = 0;
+        glGetProgramiv(programID, GL_INFO_LOG_LENGTH, &maxLength);
+
+        // The maxLength includes the null character
+        std::vector<GLchar> errorLog(maxLength);
+        glGetProgramInfoLog(programID, maxLength, &maxLength, &errorLog[0]);
+
+        std::cerr << &errorLog[0] << std::endl;
+
     } else {
         std::cerr << "Shader linked successfully." << std::endl;
     }

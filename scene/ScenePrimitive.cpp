@@ -6,7 +6,7 @@
 #include "shapes/CS123Cylinder.h"
 #include "shapes/CS123Mesh.h"
 #include "shapes/CS123Sphere.h"
-#include "shapes/CS123Plane.h"
+#include "shapes/CS123Quad.h"
 #include "shapes/CS123Torus.h"
 #include "gl/textures/TextureParametersBuilder.h"
 //#include "gl/shapes/CS123Primitive.h"
@@ -116,14 +116,17 @@ ScenePrimitive& ScenePrimitive::update(int p1, int p2, float p3) {
                 m_primitive_ptr = std::make_unique<CS123Sphere>(p1, p2);
             break;
 
-        case PrimitiveType::PRIMITIVE_PLANE:
+        case PrimitiveType::PRIMITIVE_QUAD:
             if (p1 != m_p1)
-                m_primitive_ptr = std::make_unique<CS123Plane>(p1);
+                m_primitive_ptr = std::make_unique<CS123Quad>(p1);
             break;
 
         case PrimitiveType::PRIMITIVE_MESH:
             // TODO: mesh?
             m_primitive_ptr = std::make_unique<CS123Mesh>();
+
+        default:
+            break;
     }
 
     m_p1 = p1; m_p2 = p2; m_p3 = p3;
@@ -165,8 +168,8 @@ bool ScenePrimitive::castRay(const glm::vec4 &startPoint, const glm::vec4 &world
             hit = CS123Sphere::castRay(p, ray, min_t, normal, uv);
             break;
 
-        case PrimitiveType::PRIMITIVE_PLANE:
-            hit = CS123Plane::castRay(p, ray, min_t, normal, uv);
+        case PrimitiveType::PRIMITIVE_QUAD:
+            hit = CS123Quad::castRay(p, ray, min_t, normal, uv);
             break;
 
         case PrimitiveType::PRIMITIVE_MESH:

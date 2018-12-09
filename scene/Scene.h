@@ -9,6 +9,7 @@
 #include "gl/FullScreenQuad.h"
 #include "gl/datatype/FBO.h"
 #include "gl/shaders/PhongShader.h"
+#include "gl/shaders/RayMarchShader.h"
 #include "physics/PhysicsScene.h"
 
 #include <memory>
@@ -43,6 +44,7 @@ private:
 
     CS123::GL::FullScreenQuad m_fullScreenQuad;
     std::unique_ptr<CS123::GL::FBO> m_tmp_FBO;
+    std::unique_ptr<CS123::GL::RayMarchShader> m_renderShader;
     std::unique_ptr<CS123::GL::PhongShader> m_phongShader;
     std::unique_ptr<CS123::GL::Shader> m_filterShader;
 
@@ -59,7 +61,6 @@ private:
     void setMatrixUniforms(CS123::GL::Shader *shader, View *context);
 
     void clearLights();
-
     void setLights();
 
     void renderGeometry(CS123::GL::Shader *shader);

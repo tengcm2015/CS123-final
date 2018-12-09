@@ -1,5 +1,5 @@
-#ifndef CS123SHADER_H
-#define CS123SHADER_H
+#ifndef PHONGSHADER_H
+#define PHONGSHADER_H
 
 #include "Shader.h"
 
@@ -10,13 +10,16 @@ namespace CS123 { namespace GL {
 
 class PhongShader : public Shader {
 public:
+    static const int MAX_NUM_LIGHTS = 10;
+
     PhongShader(const std::string &vertexSource, const std::string &fragmentSource);
     PhongShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource);
 
     void applyMaterial(const SceneMaterial &material);
     void setLight(const SceneLightData &light);
+    void clearLight(int id);
 };
 
 }}
 
-#endif // CS123SHADER_H
+#endif // PHONGSHADER_H

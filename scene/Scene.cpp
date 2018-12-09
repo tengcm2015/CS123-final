@@ -5,26 +5,30 @@
 
 #include <sstream>
 
-#define MAX_NUM_LIGHTS 10
-
 using namespace CS123::GL;
 using namespace CS123::PHYSICS;
 
-static bool useRayMarcher = false;
+//#define USE_RAYMARCHER
 
 Scene::Scene()
 : m_width(0), m_height(0)
 , m_camera()
 , m_fullScreenQuad()
 , m_tmp_FBO(nullptr)
+, m_renderShader(nullptr)
 , m_phongShader(nullptr)
 , m_filterShader(nullptr)
 , m_globalData{1,1,1,1}
 , m_physicsScene()
 {
+    // load ray march shader
+    std::string vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/quad.vert");
+    std::string fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/rayMarcher.frag");
+    m_renderShader = std::make_unique<RayMarchShader>(vertexSource, fragmentSource);
+
     // load phong shader
-    std::string vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.vert");
-    std::string fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.frag");
+    vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.vert");
+    fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/phong.frag");
     m_phongShader = std::make_unique<PhongShader>(vertexSource, fragmentSource);
 
     // load filter shader
@@ -43,23 +47,38 @@ void Scene::setPhongSceneUniforms() {
 }
 
 void Scene::setMatrixUniforms(Shader *shader, View *context) {
+#ifdef USE_RAYMARCHER
+    shader->setUniform("eye" , m_camera.getPosition().xyz());
+    shader->setUniform("look", m_camera.getLook().xyz());
+    shader->setUniform("up"  , m_camera.getV().xyz());
+    shader->setUniform("aspectRatio", m_camera.getAspectRatio());
+#else
     shader->setUniform("p", m_camera.getProjectionMatrix());
     shader->setUniform("v", m_camera.getViewMatrix());
+#endif
 }
 
 void Scene::clearLights() {
-    for (int i = 0; i < MAX_NUM_LIGHTS; ++i) {
-        std::ostringstream os;
-        os << i;
-        std::string indexString = "[" + os.str() + "]"; // e.g. [0], [1], etc.
-        m_phongShader->setUniform("lightColors" + indexString, glm::vec3(0.0f, 0.0f, 0.0f));
+#ifdef USE_RAYMARCHER
+    for (int i = 0; i < RayMarchShader::MAX_NUM_LIGHTS; ++i) {
+        m_renderShader->clearLight(i);
     }
+#else
+    for (int i = 0; i < PhongShader::MAX_NUM_LIGHTS; ++i) {
+        m_phongShader->clearLight(i);
+    }
+#endif
 }
 
 void Scene::setLights() {
     clearLights();
+#ifdef USE_RAYMARCHER
+    for (auto &l: m_sceneLights)
+        m_renderShader->setLight(l);
+#else
     for (auto &l: m_sceneLights)
         m_phongShader->setLight(l);
+#endif
 }
 
 void Scene::setScreenSize(int w, int h) {
@@ -81,14 +100,27 @@ void Scene::render(View *context, int msecLapsed) {
     m_tmp_FBO->bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+#ifdef USE_RAYMARCHER
+    m_renderShader->bind();
+
+    setLights();
+    m_renderShader->reloadPrimitives();
+    setMatrixUniforms(m_renderShader.get(), context);
+
+    m_fullScreenQuad.draw();
+
+    m_renderShader->unbind();
+#else
     m_phongShader->bind();
 
     setLights();
     setPhongSceneUniforms();
     setMatrixUniforms(m_phongShader.get(), context);
+
     renderGeometry(m_phongShader.get());
 
     m_phongShader->unbind();
+#endif
 
     //m_tmp_FBO->unbind();
     context->makeCurrent();
@@ -136,8 +168,7 @@ void Scene::renderGeometry(Shader* shader) {
     }
 }
 
-std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data)
-{
+std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data) {
     auto obj_ptr = std::make_shared<SceneObject>(data);
     m_object_ptrs.push_back(obj_ptr);
 
@@ -155,6 +186,9 @@ std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data)
 std::shared_ptr<ScenePrimitive> Scene::createPrimitive(const ScenePrimitiveData &scenePrimitive) {
     auto primitive_ptr = std::make_shared<ScenePrimitive>(scenePrimitive);
     m_primitive_ptrs.push_back(primitive_ptr);
+#ifdef USE_RAYMARCHER
+    m_renderShader->insertPrimitive(primitive_ptr);
+#endif
     return primitive_ptr;
 }
 

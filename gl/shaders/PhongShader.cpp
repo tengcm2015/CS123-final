@@ -8,13 +8,13 @@
 namespace CS123 { namespace GL {
 
 
-PhongShader::PhongShader(const std::string &vertexSource, const std::string &fragmentSource) :
-    Shader(vertexSource, fragmentSource)
+PhongShader::PhongShader(const std::string &vertexSource, const std::string &fragmentSource)
+: Shader(vertexSource, fragmentSource)
 {
 }
 
-PhongShader::PhongShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource) :
-    Shader(vertexSource, geometrySource, fragmentSource)
+PhongShader::PhongShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource)
+: Shader(vertexSource, geometrySource, fragmentSource)
 {
 }
 
@@ -61,6 +61,10 @@ void PhongShader::setLight(const SceneLightData &light) {
     setUniformArrayByIndex("lightTypes", lightType, light.id);
     setUniformArrayByIndex("lightColors", glm::vec3(color.r, color.g, color.b), light.id);
 //    setUniformArrayByIndex("lightAttenuations", light.function, light.id);
+}
+
+void PhongShader::clearLight(int id) {
+    setUniformArrayByIndex("lightColors", glm::vec3(0.0f), id);
 }
 
 }}

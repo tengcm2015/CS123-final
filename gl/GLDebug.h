@@ -13,7 +13,7 @@ namespace CS123 { namespace GL {
     void printFramebufferErrorCodeInEnglish(GLenum err);
 
     void checkShaderCompilationStatus(GLuint shaderID);
-    void checkShaderLinkStatus(GLuint shaderProgramID);
+    void checkShaderLinkStatus(GLuint programID);
 
 }}
 

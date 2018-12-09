@@ -1,39 +1,72 @@
-#version 400 core
+#version 410 core
 
-#define SPHERE 0
-#define PLANE 1
-#define NO_INTERSECT 2
+// for debugging
+float map_hit = 0.0;
+
+
+in vec2 clipCoord;
+
+out vec4 fragColor;
+
+#define PRIMITIVE_NONE      0
+#define PRIMITIVE_CUBE      1
+#define PRIMITIVE_CONE      2
+#define PRIMITIVE_CYLINDER  3
+#define PRIMITIVE_TORUS     4
+#define PRIMITIVE_SPHERE    5
+#define PRIMITIVE_QUAD      6
+#define PRIMITIVE_MESH      7
+
 #define DISPLACEMENT_FACTOR 0.1
+
+// camera information
+uniform vec3  eye;
+uniform vec3  look;
+uniform vec3  up;
+uniform float aspectRatio;
+
+// Light data
+const int MAX_LIGHTS = 10;
+
+uniform int  lightTypes     [MAX_LIGHTS];   // 0 for point, 1 for directional
+uniform vec3 lightPositions [MAX_LIGHTS];   // For point lights
+uniform vec3 lightDirections[MAX_LIGHTS];   // For directional lights
+uniform vec3 lightColors    [MAX_LIGHTS];
+//uniform vec3 lightAttenuations[MAX_LIGHTS]; // Constant, linear, and quadratic term
+
+// Textures
+const int MAX_SAMPLERS = 16;
+uniform sampler2D samplers[MAX_SAMPLERS];
+
+// Uniform number limit: 4096
+// Primitive data
+const   int MAX_PRIMITIVES = 50;
+
+uniform int  primitiveType          [MAX_PRIMITIVES];
+uniform mat4 primitiveTransform     [MAX_PRIMITIVES];
+
+uniform vec3 primitiveDiffuse       [MAX_PRIMITIVES];
+uniform vec3 primitiveAmbient       [MAX_PRIMITIVES];
+uniform vec3 primitiveReflective    [MAX_PRIMITIVES];
+uniform vec3 primitiveSpecular      [MAX_PRIMITIVES];
+uniform vec3 primitiveTransparent   [MAX_PRIMITIVES];
+uniform vec3 primitiveEmissive      [MAX_PRIMITIVES];
+
+uniform float primitiveShininess    [MAX_PRIMITIVES];
+uniform float primitiveIOR          [MAX_PRIMITIVES]; // index of refraction
+
+uniform float primitiveBlend [MAX_PRIMITIVES];
+
+uniform int primitiveTexID  [MAX_PRIMITIVES];
+uniform int primitiveBumpID [MAX_PRIMITIVES];
+
 
 // Data structure for raymarching results
 struct PrimitiveDist {
     float dist;
-    int primitive; // Can be SPHERE, PLANE, or NO_INTERSECT
+    int index;
 };
 
-// Helper function for tri3.
-float tri(in float x) {
-	return abs(fract(x)-.5);
-}
-
-// Triangle noise. Use it as a sample displacement map for task 7.
-vec3 tri3(in vec3 p) {
-    return vec3(tri(p.z+tri(p.y*1.)),
-                tri(p.z+tri(p.x*1.)),
-                tri(p.y+tri(p.x*1.)));
-}
-
-// TODO [Task 8] Make a displacement map
-// You can check out tri3 above and the functions in the handout as inspiration
-float calcDisplacement(in vec3 p) {
-    vec3 noise = tri3(p)/5.0;
-    return clamp(noise.x + noise.y + noise.z, -1.0, 1.0);
-}
-
-
-// TODO [Task 6] Implement triplanar texture mapping
-// If you want, you can play around with the textures in iChannels 0 and 1
-// The textures should show no distortion
 vec3 texCube( sampler2D sam, in vec3 p, in vec3 n )
 {
     return vec3( abs(n.x) * texture(sam, p.yz)
@@ -42,32 +75,85 @@ vec3 texCube( sampler2D sam, in vec3 p, in vec3 n )
                );
 }
 
-// displacement resulted from texture
+// displacement resulted from bump map
 float texDisplace = 0.0;
 
-// Signed distance to the twisted sphere.
-float sdTwistedSphere(vec3 p) {
-    vec3 spherePosition = vec3(0.0, 0.25, 0.0);
-    float radius = 1.5;
-    float primitive = length(p - spherePosition) - radius;
-    return primitive + calcDisplacement(p) + texDisplace;
+// Signed distance to the sphere.
+float sdSphere(vec3 p) {
+    float dist = length(p) - 0.5;
+    return dist + texDisplace;
 }
 
-float sdFloor(vec3 p) {
-    return p.y + texDisplace;
+float dot2(vec3 v) { return dot(v,v); }
+float udQuad(vec3 p) {
+    vec3 a = vec3( 0.5,  0.5, 0.0);
+    vec3 b = vec3( 0.5, -0.5, 0.0);
+    vec3 c = vec3(-0.5,  0.5, 0.0);
+    vec3 d = vec3(-0.5, -0.5, 0.0);
+
+    vec3 ba = b - a; vec3 pa = p - a;
+    vec3 cb = c - b; vec3 pb = p - b;
+    vec3 dc = d - c; vec3 pc = p - c;
+    vec3 ad = a - d; vec3 pd = p - d;
+    vec3 nor = cross( ba, ad );
+
+    float dist = sqrt(
+    (sign(dot(cross(ba,nor),pa)) +
+    sign(dot(cross(cb,nor),pb)) +
+    sign(dot(cross(dc,nor),pc)) +
+    sign(dot(cross(ad,nor),pd))<3.0)
+    ?
+    min( min( min(
+    dot2(ba*clamp(dot(ba,pa)/dot2(ba),0.0,1.0)-pa),
+    dot2(cb*clamp(dot(cb,pb)/dot2(cb),0.0,1.0)-pb) ),
+    dot2(dc*clamp(dot(dc,pc)/dot2(dc),0.0,1.0)-pc) ),
+    dot2(ad*clamp(dot(ad,pd)/dot2(ad),0.0,1.0)-pd) )
+    :
+    dot(nor,pa)*dot(nor,pa)/dot2(nor) );
+
+    return dist + texDisplace;
 }
+
 
 PrimitiveDist map(vec3 p) {
-    // TODO [Task 3] Implement distance map
-    float sd = sdTwistedSphere(p)
-        , pd = sdFloor(p);
+    int   min_index = -1;
+    float min_dist = 1.0 / 0.0; // requires GLSL 4.1+ to be infinite
 
-    if (sd < pd)
-    	return PrimitiveDist(sd, SPHERE);
-    return PrimitiveDist(pd, PLANE);
+//    for (int i = 0; i < MAX_PRIMITIVES; i++) {
+    for (int i = 0; i < 1; i++) {
+        mat4 transform = primitiveTransform[i];
+
+        // assuming uniform scaling
+//        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
+        float scalingFactor = 1.0;
+//        mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
+//        vec3 translationVector = transform[3].xyz;
+        vec3 obj_p = vec3(inverse(transform) * vec4(p, 1.0));
+
+        float d = min_dist;
+        switch (primitiveType[i]) {
+            case PRIMITIVE_SPHERE:
+                d = sdSphere(obj_p) * scalingFactor;
+                break;
+
+            case PRIMITIVE_QUAD:
+                //d = udQuad(obj_p) * scalingFactor;
+                break;
+
+            default:
+                /* NOT IMPLEMENTED */
+                break;
+        }
+
+        if (d < min_dist) {
+            min_index = i;
+            min_dist = d;
+        }
+    }
+
+    return PrimitiveDist(min_dist, min_index);
 }
 
-// TODO [Task 4] Calculate surface normals
 const float epsilon = 0.001;
 vec2 e = vec2(epsilon, 0.0); // For swizzling
 vec3 calcNormal(vec3 p) {
@@ -87,7 +173,6 @@ float shadow(vec3 ro, vec3 rd, float k) {
     for(int i = 0; i < 30; i++) {
         if(marchDist > boundingVolume) continue;
         float h = map(ro + rd * marchDist).dist;
-        // TODO [Task 7] Modify the loop to implement soft shadows
         if (h < threshold) {
             darkness = 0.0;
             break;
@@ -99,23 +184,19 @@ float shadow(vec3 ro, vec3 rd, float k) {
     return darkness;
 }
 
-
 PrimitiveDist raymarch(vec3 ro, vec3 rd) {
-
-    // TODO [Task 2] Implement ray marching algorithm
-    // Fill in parameters
     float marchDist = 0.001;
     float boundingDist = 50.0;
     float threshold = 0.001;
 
     // Fill in the iteration count
-    PrimitiveDist ret = PrimitiveDist(-1.0, NO_INTERSECT);
+    PrimitiveDist ret = PrimitiveDist(-1.0, -1);
     for (int i = 0; i < 1000; i++) {
         // Fill in loop body
         PrimitiveDist pd = map(ro + marchDist * rd);
         if (pd.dist < threshold) {
-            ret.dist = marchDist;
-            ret.primitive = pd.primitive;
+            ret.dist = marchDist + pd.dist;
+            ret.index = pd.index;
             break;
         }
 
@@ -127,88 +208,90 @@ PrimitiveDist raymarch(vec3 ro, vec3 rd) {
     return ret;
 }
 
-float grayscale(vec3 c) {
-	return 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
-}
-
-vec3 render(vec3 ro, vec3 rd, float t, int which) {
-
+vec3 render(vec3 ro, vec3 rd, float t, int index) {
     vec3 pos = ro + rd * t;
     vec3 nor = calcNormal(pos);
 
-    // TODO [Task 5] Assign different intersected objects with different materials
-    // Make things pretty!
-    vec3 material = vec3(0.0);
-    if (which == PLANE) {
-        material = texCube(iChannel0, pos, nor);
-        texDisplace = grayscale(material) - .5;
-
-    } else if (which == SPHERE) {
-        material = texCube(iChannel1, pos, nor);
-        texDisplace = grayscale(material) - .5;
-
+    vec3 texture = vec3(0.0f);
+    float blend = 0.0;
+    int texID = primitiveTexID[index];
+    if (texID >= 0) {
+        texture = texCube(samplers[texID], pos, nor);
+        blend = primitiveBlend[index];
     } else {
-        material = vec3(0.5);
+        /* do nothing */
     }
 
-    // Col is the final color of the current pixel.
-    vec3 col = vec3(0.);
-    pos = ro + rd * (t + texDisplace);
-    // Light vector
-    vec3 lig = normalize(vec3(1.0,0.6,0.5));
+    texID = primitiveBumpID[index];
+    if (texID >= 0) {
+        texDisplace = texCube(samplers[texID], pos, nor).x;
+    } else {
+        texDisplace = 0;
+    }
 
+    pos = ro + rd * (t + texDisplace);
     // Normal vector
     nor = calcNormal(pos);
 
+    // this useless line prevent GLSL optimization from overwriting primitiveShininess
+    fragColor = vec4(primitiveIOR[index]);
+
+    // Col is the final color of the current pixel.
     // Ambient
-    float ambient = 0.1;
-    // Diffuse
-    float diffuse = clamp(dot(nor, lig), 0.0, 1.0);
-    // Specular
-    float shineness = 32.0;
-    float specular = pow(clamp(dot(rd, reflect(lig, nor)), 0.0, 1.0), shineness);
+    vec3 col = primitiveAmbient[index];
 
-    float darkness = shadow(pos, lig, 18.0);
-    // Applying the phong lighting model to the pixel.
-    col += vec3(((ambient + diffuse + specular) * darkness));
-    // Blend the material color with the original color.
-    col = mix(col, material, 0.4);
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        // Light vector
+        vec3 posToLight = vec3(0.);
+        // Point Light
+        if (lightTypes[i] == 0) {
+            posToLight = normalize(lightPositions[i] - pos);
+        } else if (lightTypes[i] == 1) {
+            // Dir Light
+            posToLight = normalize(-lightDirections[i]);
+        }
 
-    return col;
+        // Add diffuse component
+        float diffuseIntensity = clamp(dot(nor, posToLight), 0.0, 1.0);
+        vec3 diffuse = max(vec3(0), lightColors[i] * primitiveDiffuse[index] * diffuseIntensity);
+
+        // Add specular component
+        vec3 lightReflection = normalize(reflect(-posToLight, nor));
+        vec3 eyeDirection = normalize(-rd);
+        float shininess = primitiveShininess[index];
+        float specIntensity = pow(clamp(dot(eyeDirection, lightReflection), 0.0, 1.0), shininess);
+        vec3 specular = max(vec3(0), lightColors[i] * primitiveSpecular[index] * specIntensity);
+
+        float darkness = shadow(pos, posToLight, 18.0);
+
+        col += (diffuse + specular) * darkness;
+    }
+
+    return mix(col, texture, blend);
 }
 
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-
-    vec3 rayOrigin = vec3(6.0 * sin(iTime * .3), 4.8, 6.0 * cos(iTime * .3));
-
-    float focalLength = 2.0;
-
-    // The target we are looking at
-    vec3 target = vec3(0.0);
-    // Look vector
-    vec3 look = normalize(rayOrigin - target);
-    // Up vector
-    vec3 up = vec3(0.0, 1.0, 0.0);
-
+void main() {
     // Set up camera matrix
-    vec3 cameraForward = -look;
-    vec3 cameraRight = normalize(cross(cameraForward, up));
-    vec3 cameraUp = normalize(cross(cameraRight, cameraForward));
+    vec3 cameraForward = normalize(look);
+    vec3 cameraRight   = normalize(cross(cameraForward, up));
+    vec3 cameraUp      = normalize(cross(cameraRight, cameraForward));
 
-    // TODO [Task 1] Construct the ray direction vector
-    vec2 uv = fragCoord / vec2(iResolution) * 2.0 - vec2(1.0);
-    uv.x *= iResolution.x / iResolution.y;
+    vec2 uv = clipCoord;
+    uv.x *= aspectRatio;
 
+    // Construct world space ray
+    float focalLength = 2; // IDK why but it is 2...
     vec3 rayDirection = vec3(uv, focalLength);
     rayDirection = rayDirection.x * cameraRight
                  + rayDirection.y * cameraUp
                  + rayDirection.z * cameraForward;
     rayDirection = normalize(rayDirection);
 
-    PrimitiveDist rayMarchResult = raymarch(rayOrigin, rayDirection);
-    vec3 col = vec3(0.0);
-    if (rayMarchResult.primitive != NO_INTERSECT) {
-      	col = render(rayOrigin, rayDirection, rayMarchResult.dist, rayMarchResult.primitive);
+    // MARCH
+    PrimitiveDist rayMarchResult = raymarch(eye, rayDirection);
+    vec3 col = vec3(0);
+    if (rayMarchResult.index >= 0) {
+      	col = render(eye, rayDirection, rayMarchResult.dist, rayMarchResult.index);
     }
 
     fragColor = vec4(col, 1.0);

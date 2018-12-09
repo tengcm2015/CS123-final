@@ -11,12 +11,13 @@ enum class LightType {
 };
 
 enum class PrimitiveType {
+    PRIMITIVE_NONE,
     PRIMITIVE_CUBE,
     PRIMITIVE_CONE,
     PRIMITIVE_CYLINDER,
     PRIMITIVE_TORUS,
     PRIMITIVE_SPHERE,
-    PRIMITIVE_PLANE,
+    PRIMITIVE_QUAD,
     PRIMITIVE_MESH
 };
 

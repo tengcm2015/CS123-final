@@ -82,7 +82,7 @@ void SceneBuilder::initScene(Scene &scene) {
     SceneObjectData &planeObjectData = sphereObjectData;
 
     ScenePrimitiveData &planePrimitiveData = spherePrimitiveData;
-    planePrimitiveData.type = PrimitiveType::PRIMITIVE_PLANE;
+    planePrimitiveData.type = PrimitiveType::PRIMITIVE_QUAD;
     planePrimitiveData.meshfile = "";
 
     material.cDiffuse  = {0.5f, 0.5f, 0.5f, 1.0f};
