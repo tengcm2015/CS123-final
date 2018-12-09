@@ -2,10 +2,12 @@
 
 #define EDGE_THRESHOLD_MIN  0.0312
 #define EDGE_THRESHOLD_MAX  0.125
-#define QUALITY
 #define SUBPIXEL_QUALITY 0.75
 
 #define ITERATIONS 12
+const float QUALITY[12] = float[] (1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 2.0, 2.0, 2.0, 4.0, 8.0);
+
+
 
 in vec2 uv;
 
@@ -13,40 +15,11 @@ uniform sampler2D tex;
 
 out vec4 fragColor;
 
-float rgb2luma(vec3 rgb){
+float rgb2luma(vec3 rgb) {
     return sqrt(dot(rgb, vec3(0.299, 0.587, 0.114)));
 }
 
-float quality(int i){
-    if (i < 5) return 1.0;
-    if (i == 5) return 1.5;
-
-    if (i < 10) return 2.0;
-    if (i == 10) return 4.0;
-    return 8.0;
-}
-
-void main(){
-
-    /*vec2 texelSize = 1.0 / textureSize(tex, 0).xy;
-
-    const int supportWidth = 20;
-
-    fragColor = vec4(0.0);
-    float weights = 0.0;
-    for (int i = -supportWidth; i <= supportWidth; i++) {
-        // currently doing horizontal blur
-        float weight = (supportWidth + 1) - abs(i);
-        weights += weight;
-        fragColor += weight * texture(tex, uv + vec2(i * texelSize.x, 0));
-    }
-    fragColor /= weights;
-
-    // comment out this line to filter!
-    //fragColor = texture(tex, uv);
-
-    */
-
+void main() {
     vec2 inverseScreenSize = 1.0/textureSize(tex,0).xy;
 
     vec3 colorCenter = texture(tex,uv).rgb;
@@ -55,9 +28,9 @@ void main(){
     float lumaCenter = rgb2luma(colorCenter);
 
     // Luma at the four direct neighbours of the current fragment.
-    float lumaDown = rgb2luma(textureOffset(tex,uv,ivec2(0,-1)).rgb);
-    float lumaUp = rgb2luma(textureOffset(tex,uv,ivec2(0,1)).rgb);
-    float lumaLeft = rgb2luma(textureOffset(tex,uv,ivec2(-1,0)).rgb);
+    float lumaDown  = rgb2luma(textureOffset(tex,uv,ivec2(0,-1)).rgb);
+    float lumaUp    = rgb2luma(textureOffset(tex,uv,ivec2(0,1)).rgb);
+    float lumaLeft  = rgb2luma(textureOffset(tex,uv,ivec2(-1,0)).rgb);
     float lumaRight = rgb2luma(textureOffset(tex,uv,ivec2(1,0)).rgb);
 
     // Find the maximum and minimum luma around the current fragment.
@@ -75,28 +48,27 @@ void main(){
 
 
     // Query the 4 remaining corners lumas.
-    float lumaDownLeft = rgb2luma(textureOffset(tex,uv,ivec2(-1,-1)).rgb);
-    float lumaUpRight = rgb2luma(textureOffset(tex,uv,ivec2(1,1)).rgb);
-    float lumaUpLeft = rgb2luma(textureOffset(tex,uv,ivec2(-1,1)).rgb);
+    float lumaDownLeft  = rgb2luma(textureOffset(tex,uv,ivec2(-1,-1)).rgb);
+    float lumaUpRight   = rgb2luma(textureOffset(tex,uv,ivec2(1,1)).rgb);
+    float lumaUpLeft    = rgb2luma(textureOffset(tex,uv,ivec2(-1,1)).rgb);
     float lumaDownRight = rgb2luma(textureOffset(tex,uv,ivec2(1,-1)).rgb);
 
     // Combine the four edges lumas (using intermediary variables for future computations with the same values).
-    float lumaDownUp = lumaDown + lumaUp;
+    float lumaDownUp    = lumaDown + lumaUp;
     float lumaLeftRight = lumaLeft + lumaRight;
 
     // Same for corners
-    float lumaLeftCorners = lumaDownLeft + lumaUpLeft;
-    float lumaDownCorners = lumaDownLeft + lumaDownRight;
-    float lumaRightCorners = lumaDownRight + lumaUpRight;
-    float lumaUpCorners = lumaUpRight + lumaUpLeft;
+    float lumaLeftCorners   = lumaDownLeft  + lumaUpLeft;
+    float lumaDownCorners   = lumaDownLeft  + lumaDownRight;
+    float lumaRightCorners  = lumaDownRight + lumaUpRight;
+    float lumaUpCorners     = lumaUpRight   + lumaUpLeft;
 
     // Compute an estimation of the gradient along the horizontal and vertical axis.
-    float edgeHorizontal =  abs(-2.0 * lumaLeft + lumaLeftCorners)  + abs(-2.0 * lumaCenter + lumaDownUp ) * 2.0    + abs(-2.0 * lumaRight + lumaRightCorners);
-    float edgeVertical =    abs(-2.0 * lumaUp + lumaUpCorners)      + abs(-2.0 * lumaCenter + lumaLeftRight) * 2.0  + abs(-2.0 * lumaDown + lumaDownCorners);
+    float edgeHorizontal = abs(-2.0 * lumaLeft + lumaLeftCorners) + abs(-2.0 * lumaCenter + lumaDownUp ) * 2.0    + abs(-2.0 * lumaRight + lumaRightCorners);
+    float edgeVertical   = abs(-2.0 * lumaUp + lumaUpCorners)     + abs(-2.0 * lumaCenter + lumaLeftRight) * 2.0  + abs(-2.0 * lumaDown + lumaDownCorners);
 
     // Is the local edge horizontal or vertical ?
     bool isHorizontal = (edgeHorizontal >= edgeVertical);
-
 
 
 
@@ -111,7 +83,7 @@ void main(){
     bool is1Steepest = abs(gradient1) >= abs(gradient2);
 
     // Gradient in the corresponding direction, normalized.
-    float gradientScaled = 0.25*max(abs(gradient1),abs(gradient2));
+    float gradientScaled = 0.25 * max(abs(gradient1), abs(gradient2));
 
 
 
@@ -121,23 +93,21 @@ void main(){
     // Average luma in the correct direction.
     float lumaLocalAverage = 0.0;
 
-    if(is1Steepest){
+    if (is1Steepest) {
         // Switch the direction
         stepLength = - stepLength;
         lumaLocalAverage = 0.5*(luma1 + lumaCenter);
+
     } else {
         lumaLocalAverage = 0.5*(luma2 + lumaCenter);
     }
 
     // Shift UV in the correct direction by half a pixel.
-    vec2 currentUv = uv;
-    if(isHorizontal){
-        currentUv.y += stepLength * 0.5;
-    } else {
-        currentUv.x += stepLength * 0.5;
-    }
-
-
+    vec2 currentUV = uv;
+    if (isHorizontal)
+        currentUV.y += stepLength * 0.5;
+    else
+        currentUV.x += stepLength * 0.5;
 
 
 
@@ -145,8 +115,8 @@ void main(){
     // Compute offset (for each iteration step) in the right direction.
     vec2 offset = isHorizontal ? vec2(inverseScreenSize.x,0.0) : vec2(0.0,inverseScreenSize.y);
     // Compute UVs to explore on each side of the edge, orthogonally. The QUALITY allows us to step faster.
-    vec2 uv1 = currentUv - offset;
-    vec2 uv2 = currentUv + offset;
+    vec2 uv1 = currentUV - offset;
+    vec2 uv2 = currentUV + offset;
 
     // Read the lumas at both current extremities of the exploration segment, and compute the delta wrt to the local average luma.
     float lumaEnd1 = rgb2luma(texture(tex,uv1).rgb);
@@ -160,30 +130,24 @@ void main(){
     bool reachedBoth = reached1 && reached2;
 
     // If the side is not reached, we continue to explore in this direction.
-    if(!reached1){
+    if (!reached1)
         uv1 -= offset;
-    }
-    if(!reached2){
+    if (!reached2)
         uv2 += offset;
-    }
-
-
-
-
 
 
 
     // If both sides have not been reached, continue to explore.
-    if(!reachedBoth){
+    if (!reachedBoth) {
 
-        for(int i = 2; i < ITERATIONS; i++){
+        for (int i = 2; i < ITERATIONS; i++) {
             // If needed, read luma in 1st direction, compute delta.
-            if(!reached1){
+            if (!reached1) {
                 lumaEnd1 = rgb2luma(texture(tex, uv1).rgb);
                 lumaEnd1 = lumaEnd1 - lumaLocalAverage;
             }
             // If needed, read luma in opposite direction, compute delta.
-            if(!reached2){
+            if (!reached2) {
                 lumaEnd2 = rgb2luma(texture(tex, uv2).rgb);
                 lumaEnd2 = lumaEnd2 - lumaLocalAverage;
             }
@@ -193,21 +157,15 @@ void main(){
             reachedBoth = reached1 && reached2;
 
             // If the side is not reached, we continue to explore in this direction, with a variable quality.
-            if(!reached1){
-                uv1 -= offset * quality(i);
-            }
-            if(!reached2){
-                uv2 += offset * quality(i);
-            }
+            if (!reached1)
+                uv1 -= offset * QUALITY[i];
+            if (!reached2)
+                uv2 += offset * QUALITY[i];
 
             // If both sides have been reached, stop the exploration.
-            if(reachedBoth){ break;}
+            if (reachedBoth) break;
         }
     }
-
-
-
-
 
 
 
@@ -227,7 +185,6 @@ void main(){
 
 
 
-
     // Is the luma at center smaller than the local average ?
     bool isLumaCenterSmaller = lumaCenter < lumaLocalAverage;
 
@@ -237,8 +194,6 @@ void main(){
 
     // If the luma variation is incorrect, do not offset.
     float finalOffset = correctVariation ? pixelOffset : 0.0;
-
-
 
 
 
@@ -256,21 +211,13 @@ void main(){
 
 
 
-
-
-
-
     // Compute the final UV coordinates.
-    vec2 finalUv = uv;
-    if(isHorizontal){
-        finalUv.y += finalOffset * stepLength;
-    } else {
-        finalUv.x += finalOffset * stepLength;
-    }
+    vec2 finalUV = uv;
+    if (isHorizontal)
+        finalUV.y += finalOffset * stepLength;
+    else
+        finalUV.x += finalOffset * stepLength;
 
     // Read the color at the new UV coordinates, and use it.
-    fragColor = texture(tex,finalUv);
-
+    fragColor = texture(tex, finalUV);
 }
-
-
