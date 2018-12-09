@@ -63,8 +63,20 @@ void SceneBuilder::initScene(Scene &scene) {
 
     auto spherePhysics_ptr = physicsScene.createObject(spherePhysicsData);
 
-    sphereObject_ptr->pushMatrix(glm::scale(glm::vec3(0.5f)));
+    spherePhysics_ptr->setLinearVelocity(glm::vec3(0.001,0.002,-0.001));
+    sphereObject_ptr->pushMatrix(glm::scale(glm::vec3(0.3f)));
     sphereObject_ptr->assignPhysics(spherePhysics_ptr);
+
+    // sphere 2
+    sphereObject_ptr = scene.createObject(sphereObjectData);
+    spherePhysics_ptr = physicsScene.createObject(spherePhysicsData);
+
+    spherePhysics_ptr->setLinearVelocity(glm::vec3(0.003,0.001,0.002));
+    spherePhysics_ptr->setModelTransform(glm::translate(glm::vec3(0.5, 0.5, 0.5)));
+
+    sphereObject_ptr->pushMatrix(glm::scale(glm::vec3(0.3f)));
+    sphereObject_ptr->assignPhysics(spherePhysics_ptr);
+
 
     // inward-faced cube
     SceneObjectData &planeObjectData = sphereObjectData;
