@@ -8,9 +8,6 @@
 
 namespace CS123 { namespace PHYSICS {
 
-// standard gravity in m/(s^2)
-const float STD_G = 9.80665;
-
 enum class PhysicsFlag {
     FLAG_DISABLED,
     FLAG_DYNAMIC,
@@ -30,24 +27,23 @@ enum class GeometryType {
 
 // Global physics properties
 struct PhysicsGlobalData {
-    float MPU; // meter per unit
-    float damping;
-    glm::vec3 gravity;
+    float damping = 0.0f;
+    glm::vec3 gravity {0.0f, -0.001f, 0.0f};
 };
 
 // Data for physics materials
 struct PhysicsMaterial {
-    float density;
-    float restitution;
-    float staticFriction;
-    float dynamicFriction;
+    float density = 1.0f;
+    float restitution = 1.0f;
+    float staticFriction = 0.0f;
+    float dynamicFriction = 0.0f;
 };
 
 struct PhysicsObjectData {
-    PhysicsFlag flag;
-    GeometryType type;
+    PhysicsFlag flag = PhysicsFlag::FLAG_DYNAMIC;
+    GeometryType type = GeometryType::GEOMETRY_SPHERE;
     PhysicsMaterial material;
-    std::vector<CS123::UTIL::Transformation> transformations;
+    std::vector<CS123Transformation> transformations;
 };
 
 }}

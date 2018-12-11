@@ -21,115 +21,88 @@ enum class PrimitiveType {
     PRIMITIVE_MESH
 };
 
-// Struct to store a RGBA color in floats [0,1]
-using SceneColor = glm::vec4;
-
 // Scene global color coefficients
 struct SceneGlobalData  {
-   float ka;  // global ambient coefficient
-   float kd;  // global diffuse coefficient
-   float ks;  // global specular coefficient
-   float kt;  // global transparency coefficient
+    float ka = 1.0f;  // global ambient coefficient
+    float kd = 1.0f;  // global diffuse coefficient
+    float ks = 1.0f;  // global specular coefficient
+    float kt = 1.0f;  // global transparency coefficient
 };
 
 // Data for a single light
 struct SceneLightData {
-   int id;
-   LightType type;
+    int id = -1;
+    LightType type = LightType::LIGHT_POINT;
 
-   SceneColor color;
-   glm::vec3 function;  // Attenuation function
+    RGBAf color {0.0f};
+    glm::vec3 function;  // Attenuation function
 
-   glm::vec4 pos;       // Not applicable to directional lights
-   glm::vec4 dir;       // Not applicable to point lights
+    glm::vec4 pos;       // Not applicable to directional lights
+    glm::vec4 dir;       // Not applicable to point lights
 
-   float radius;        // Only applicable to spot lights
-   float penumbra;      // Only applicable to spot lights
-   float angle;         // Only applicable to spot lights
+    float radius;        // Only applicable to spot lights
+    float penumbra;      // Only applicable to spot lights
+    float angle;         // Only applicable to spot lights
 
-   float width, height; // Only applicable to area lights
+    float width, height; // Only applicable to area lights
 };
 
 // Data for scene camera
 struct SceneCameraData {
-   glm::vec4 pos;
-   glm::vec4 look;
-   glm::vec4 up;
+    glm::vec4 pos  {0.0f};
+    glm::vec4 look {0.0f};
+    glm::vec4 up   {0.0f};
 
-   float heightAngle;
-   float aspectRatio;
+    float heightAngle = 0.0f;
+    float aspectRatio = 1.0f;
 
-   float aperture;      // Only applicable for depth of field
-   float focalLength;   // Only applicable for depth of field
+    float aperture    = 0.0f;   // Only applicable for depth of field
+    float focalLength = 2.0f;   // Only applicable for depth of field
 };
 
 // Data for file maps (ie: texture maps)
 struct SceneFileMap {
-//    SceneFileMap() : texid(0) {}
-   bool isUsed;
-   std::string filename;
-   float repeatU;
-   float repeatV;
-
-   void clear() {
-       isUsed = false;
-       repeatU = 0.0f;
-       repeatV = 0.0f;
-       filename = std::string();
-   }
+    bool isUsed = false;
+    std::string filename;
+    float repeatU = 0.0f;
+    float repeatV = 0.0f;
 };
 
 // Data for scene materials
 struct SceneMaterial {
-   // This field specifies the diffuse color of the object. This is the color you need to use for
-   // the object in sceneview. You can get away with ignoring the other color values until
-   // intersect and ray.
-//   SceneMaterial() {}
-   SceneColor cDiffuse;
+    // This field specifies the diffuse color of the object. This is the color you need to use for
+    // the object in sceneview. You can get away with ignoring the other color values until
+    // intersect and ray.
+    RGBAf cDiffuse      {0.0f};
+    RGBAf cAmbient      {0.0f};
+    RGBAf cReflective   {0.0f};
+    RGBAf cSpecular     {0.0f};
+    RGBAf cTransparent  {0.0f};
+    RGBAf cEmissive     {0.0f};
 
-   SceneColor cAmbient;
-   SceneColor cReflective;
-   SceneColor cSpecular;
-   SceneColor cTransparent;
-   SceneColor cEmissive;
+    SceneFileMap textureMap;
+    float blend = 0.0f;
 
-   SceneFileMap textureMap;
-   float blend;
+    SceneFileMap bumpMap;
 
-   SceneFileMap bumpMap;
+    float shininess = 1.0f;
 
-   float shininess;
-
-   float ior; // index of refraction
-
-   void clear() {
-       cAmbient.r = 0.0f; cAmbient.g = 0.0f; cAmbient.b = 0.0f; cAmbient.a = 0.0f;
-       cDiffuse.r = 0.0f; cDiffuse.g = 0.0f; cDiffuse.b = 0.0f; cDiffuse.a = 0.0f;
-       cSpecular.r = 0.0f; cSpecular.g = 0.0f; cSpecular.b = 0.0f; cSpecular.a = 0.0f;
-       cReflective.r = 0.0f; cReflective.g = 0.0f; cReflective.b = 0.0f; cReflective.a = 0.0f;
-       cTransparent.r = 0.0f; cTransparent.g = 0.0f; cTransparent.b = 0.0f; cTransparent.a = 0.0f;
-       cEmissive.r = 0.0f; cEmissive.g = 0.0f; cEmissive.b = 0.0f; cEmissive.a = 0.0f;
-       textureMap.clear();
-       bumpMap.clear();
-       blend = 0.0f;
-       shininess = 0.0f;
-       ior = 0.0;
-   }
+    float ior = 1.0f; // index of refraction
 };
 
 struct ScenePrimitiveData {
-   PrimitiveType type;
-   std::string meshfile;     // Only applicable to meshes
-   SceneMaterial material;
+    PrimitiveType type = PrimitiveType::PRIMITIVE_NONE;
+    std::string meshfile; // Only applicable to meshes
+    SceneMaterial material;
 };
 
 // Structure for non-primitive scene objects
 struct SceneObjectData {
-   std::vector<CS123::UTIL::Transformation> transformations;
+    std::vector<CS123Transformation> transformations;
 
-   std::vector<ScenePrimitiveData> primitives;
+    std::vector<ScenePrimitiveData> primitives;
 
-   std::vector<SceneObjectData> children;
+    std::vector<SceneObjectData> children;
 };
 
 #endif

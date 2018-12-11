@@ -18,7 +18,7 @@ PhongShader::PhongShader(const std::string &vertexSource, const std::string &geo
 {
 }
 
-glm::vec3 toGLMVec3(const SceneColor &c) {
+glm::vec3 toGLMVec3(const RGBAf &c) {
     return glm::vec3(c.r, c.g, c.b);
 }
 
@@ -55,7 +55,7 @@ void PhongShader::setLight(const SceneLightData &light) {
             break;
     }
 
-    SceneColor color = light.color;
+    RGBAf color = light.color;
     if (ignoreLight) color.r = color.g = color.b = 0;
 
     setUniformArrayByIndex("lightTypes", lightType, light.id);

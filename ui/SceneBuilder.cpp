@@ -1,108 +1,131 @@
 #include "SceneBuilder.h"
 
+#include "Settings.h"
+#include "lib/CS123Utils.h"
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
-
-#include "physics/PhysicsScene.h"
 
 using namespace CS123::GL;
 using namespace CS123::PHYSICS;
+using namespace CS123::UTILS;
 
 #define PI static_cast<float>(M_PI)
 
 static void initializeSceneLight(Scene &scene) {
     // Use a white directional light from the upper left corner
-    auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));\
+    auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));
+
+    auto &c = scene.getCamera();
+    glm::vec3 d = lightDirection.x * c.getU().xyz()
+                + lightDirection.y * c.getV().xyz()
+                + lightDirection.z * c.getW().xyz()
+                ;
 
     SceneLightData lightData;
     lightData.type = LightType::LIGHT_DIRECTIONAL,
-    lightData.dir = lightDirection,
+    lightData.dir = glm::vec4(d, 0),
     lightData.color = {1,1,1,1},
     lightData.id = 0;
 
     scene.addLight(lightData);
 }
 
+SceneBuilder::SceneBuilder()
+{
+    setSphereDataFromSettings();
+    setBoxDataFromSettings();
+}
+
+SceneBuilder::~SceneBuilder()
+{
+}
+
 void SceneBuilder::initScene(Scene &scene) {
     initializeSceneLight(scene);
+    createBox(scene);
+}
 
-    // init scene objects
-    auto &physicsScene = scene.getPhysicsScene();
-    physicsScene.setGlobal(PhysicsGlobalData {
-        .MPU = 10.0f,
-        .damping = 0.0,
-        .gravity = {0, -STD_G, 0}
-    });
-
-    // sphere
-    SceneObjectData sphereObjectData;
-
+void SceneBuilder::setSphereDataFromSettings() {
     ScenePrimitiveData spherePrimitiveData;
     spherePrimitiveData.type = PrimitiveType::PRIMITIVE_SPHERE;
     spherePrimitiveData.meshfile = "";
 
-    SceneMaterial material;
-    material.cDiffuse  = {1.0f, 0.5f, 0.0f, 1.0f};
-    material.cAmbient  = {0.2f, 0.1f, 0.0f, 1.0f};
-    material.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
-    material.shininess = 64;
-    spherePrimitiveData.material = material;
+    RGBAf color = byte2REAL(settings.ballColor);
+    m_sphereMaterial.cDiffuse  = color;
+    m_sphereMaterial.cAmbient  = color / 5.f;
+    m_sphereMaterial.cSpecular = RGBAf(1.0f);
+    m_sphereMaterial.shininess = settings.shininess;
+    spherePrimitiveData.material = m_sphereMaterial;
 
-    sphereObjectData.primitives.push_back(spherePrimitiveData);
-    auto sphereObject_ptr = scene.createObject(sphereObjectData);
+    m_sphereObjectData.primitives.clear();
+    m_sphereObjectData.primitives.push_back(spherePrimitiveData);
 
-    PhysicsObjectData spherePhysicsData;
-    spherePhysicsData.type = GeometryType::GEOMETRY_SPHERE;
-    spherePhysicsData.flag = PhysicsFlag::FLAG_DYNAMIC;
+    m_spherePhysicsMaterial.density         = settings.density;
+    m_spherePhysicsMaterial.restitution     = settings.restitution;
+    m_spherePhysicsMaterial.staticFriction  = settings.friction;
+    m_spherePhysicsMaterial.dynamicFriction = settings.friction * 0.8f;
 
-    PhysicsMaterial physicsMaterial;
-    physicsMaterial.density = 1.0f;
-    physicsMaterial.restitution = 1.0f;
-    physicsMaterial.staticFriction = 0.5f;
-    physicsMaterial.dynamicFriction = 0.4f;
-    spherePhysicsData.material = physicsMaterial;
+    m_spherePhysicsData.type = GeometryType::GEOMETRY_SPHERE;
+    m_spherePhysicsData.flag = PhysicsFlag::FLAG_DYNAMIC;
 
-    auto spherePhysics_ptr = physicsScene.createObject(spherePhysicsData);
+    m_spherePhysicsData.material = m_spherePhysicsMaterial;
+}
 
-    spherePhysics_ptr->setLinearVelocity(glm::vec3(0.001,0.002,-0.001));
-    sphereObject_ptr->pushMatrix(glm::scale(glm::vec3(0.3f)));
-    sphereObject_ptr->assignPhysics(spherePhysics_ptr);
+void SceneBuilder::setBoxDataFromSettings() {
+    ScenePrimitiveData quadPrimitiveData;
+    quadPrimitiveData.type = PrimitiveType::PRIMITIVE_QUAD;
+    quadPrimitiveData.meshfile = "";
 
-    // sphere 2
-    sphereObject_ptr = scene.createObject(sphereObjectData);
-    spherePhysics_ptr = physicsScene.createObject(spherePhysicsData);
+    m_quadMaterial.cDiffuse  = {0.5f, 0.5f, 0.5f, 1.0f};
+    m_quadMaterial.cAmbient  = {0.1f, 0.1f, 0.1f, 1.0f};
+    m_quadMaterial.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
+    m_quadMaterial.shininess = 64;
+    quadPrimitiveData.material = m_quadMaterial;
 
-    spherePhysics_ptr->setLinearVelocity(glm::vec3(0.003,0.001,0.002));
-    spherePhysics_ptr->setModelTransform(glm::translate(glm::vec3(0.5, 0.5, 0.5)));
+    m_quadObjectData.primitives.clear();
+    m_quadObjectData.primitives.push_back(quadPrimitiveData);
 
-    sphereObject_ptr->pushMatrix(glm::scale(glm::vec3(0.3f)));
-    sphereObject_ptr->assignPhysics(spherePhysics_ptr);
+    m_quadPhysicsMaterial.density = 1.0f;
+    m_quadPhysicsMaterial.restitution = 1.0f;
+    m_quadPhysicsMaterial.staticFriction = 0.5f;
+    m_quadPhysicsMaterial.dynamicFriction = 0.4f;
 
+    m_quadPhysicsData.type = GeometryType::GEOMETRY_PLANE;
+    m_quadPhysicsData.flag = PhysicsFlag::FLAG_KINEMATIC;
+
+    m_quadPhysicsData.material = m_quadPhysicsMaterial;
+}
+
+// standard gravity in m/(s^2)
+const float STD_G = 9.80665;
+
+void SceneBuilder::setParametersFromSettings(Scene &scene) {
+    // TODO: set gravity based on camera positon
+//    auto &c = scene.getCamera();
+//    glm::vec3 g = settings.gravity.x * c.getU().xyz() - glm::vec3(2.0f);
+//                + settings.gravity.y * c.getV().xyz() - glm::vec3(2.0f);
+//                + settings.gravity.z * c.getW().xyz() - glm::vec3(2.0f);
+//                ;
+
+    auto &physicsScene = scene.getPhysicsScene();
+    physicsScene.setGlobal(PhysicsGlobalData {
+        .damping = 0.0,
+        .gravity = settings.gravity * STD_G / 10.f / 1000.f
+    });
+
+    setSphereDataFromSettings();
+    setBoxDataFromSettings();
+}
+
+void SceneBuilder::createBox(Scene &scene) {
+    auto &physicsScene = scene.getPhysicsScene();
 
     // inward-faced cube
-    SceneObjectData &planeObjectData = sphereObjectData;
-
-    ScenePrimitiveData &planePrimitiveData = spherePrimitiveData;
-    planePrimitiveData.type = PrimitiveType::PRIMITIVE_QUAD;
-    planePrimitiveData.meshfile = "";
-
-    material.cDiffuse  = {0.5f, 0.5f, 0.5f, 1.0f};
-    material.cAmbient  = {0.1f, 0.1f, 0.1f, 1.0f};
-    material.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
-    material.shininess = 64;
-    planePrimitiveData.material = material;
-
-    planeObjectData.primitives[0] = planePrimitiveData;
-
-    PhysicsObjectData &planePhysicsData = spherePhysicsData;
-    planePhysicsData.type = GeometryType::GEOMETRY_PLANE;
-    planePhysicsData.flag = PhysicsFlag::FLAG_KINEMATIC;
-
     // -z
     auto extTransform = glm::translate(glm::vec3(0, 0, -1)) * glm::scale(glm::vec3(2.0f));
 
-    auto planeObject_ptr = scene.createObject(planeObjectData);
+    auto planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    auto planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    auto planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
@@ -112,9 +135,9 @@ void SceneBuilder::initScene(Scene &scene) {
     extTransform *= glm::rotate(PI, glm::vec3(1, 0, 0));
     extTransform *= glm::scale(glm::vec3(2.0f));
 
-    planeObject_ptr = scene.createObject(planeObjectData);
+    planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
@@ -125,9 +148,9 @@ void SceneBuilder::initScene(Scene &scene) {
     extTransform *= glm::rotate(-PI/2, glm::vec3(1, 0, 0));
     extTransform *= glm::scale(glm::vec3(2.0f));
 
-    planeObject_ptr = scene.createObject(planeObjectData);
+    planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
@@ -137,9 +160,9 @@ void SceneBuilder::initScene(Scene &scene) {
     extTransform *= glm::rotate(PI/2, glm::vec3(1, 0, 0));
     extTransform *= glm::scale(glm::vec3(2.0f));
 
-    planeObject_ptr = scene.createObject(planeObjectData);
+    planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
@@ -150,9 +173,9 @@ void SceneBuilder::initScene(Scene &scene) {
     extTransform *= glm::rotate(PI/2, glm::vec3(0, 1, 0));
     extTransform *= glm::scale(glm::vec3(2.0f));
 
-    planeObject_ptr = scene.createObject(planeObjectData);
+    planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
@@ -162,11 +185,27 @@ void SceneBuilder::initScene(Scene &scene) {
     extTransform *= glm::rotate(-PI/2, glm::vec3(0, 1, 0));
     extTransform *= glm::scale(glm::vec3(2.0f));
 
-    planeObject_ptr = scene.createObject(planeObjectData);
+    planeObject_ptr = scene.createObject(m_quadObjectData);
 
-    planePhysics_ptr = physicsScene.createObject(planePhysicsData);
+    planePhysics_ptr = physicsScene.createObject(m_quadPhysicsData);
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
+}
 
+void SceneBuilder::createBall(Scene &scene) {
+    auto &physicsScene = scene.getPhysicsScene();
+
+    // init scene objects
+    auto sphereObject_ptr = scene.createObject(m_sphereObjectData);
+
+    auto spherePhysics_ptr = physicsScene.createObject(m_spherePhysicsData);
+
+    auto extTransform = glm::scale(glm::vec3(settings.radius/0.5f));
+
+    spherePhysics_ptr->setLinearVelocity(settings.velocity / 1000.f);
+    spherePhysics_ptr->setModelTransform(extTransform);
+
+    sphereObject_ptr->pushMatrix(extTransform);
+    sphereObject_ptr->assignPhysics(spherePhysics_ptr);
 }

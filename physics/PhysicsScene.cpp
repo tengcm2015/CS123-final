@@ -70,7 +70,7 @@ void PhysicsScene::simulate(int msecLapsed) {
             newLinearVelocity.z = -newLinearVelocity.z;
          }
 
-        newLinearVelocity += m_data.gravity / m_data.MPU / 1000.0f;
+        newLinearVelocity += m_data.gravity;
         curPos = curPos + newLinearVelocity * (float) msecLapsed;
 
         op->m_physicsTransform = glm::translate(curPos);
@@ -151,6 +151,10 @@ std::shared_ptr<PhysicsObject> PhysicsScene::createObject(const PhysicsObjectDat
     auto obj_ptr = std::make_shared<PhysicsObject>(data);
     m_object_ptrs.push_back(obj_ptr);
     return obj_ptr;
+}
+
+void PhysicsScene::clearObjects() {
+    m_object_ptrs.clear();
 }
 
 }}

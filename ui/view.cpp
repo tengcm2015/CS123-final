@@ -11,6 +11,7 @@ View::View(QWidget *parent)
 : QOpenGLWidget(parent)
 , m_time(), m_timer()
 , m_captureMouse(false)
+, m_sceneBuilder()
 , m_scene_ptr(nullptr)
 {
     // View needs all mouse move events, not just mouse drag events
@@ -59,7 +60,9 @@ void View::initializeGL()
 
     // create scene
     m_scene_ptr = std::make_unique<Scene>();
-    SceneBuilder::initScene(*m_scene_ptr);
+    m_sceneBuilder.initScene(*m_scene_ptr);
+
+    this->settingsChanged();
 }
 
 void View::paintGL()
@@ -120,5 +123,21 @@ void View::keyReleaseEvent(QKeyEvent *event)
 void View::tick()
 {
     // Flag this view for repainting (Qt will call paintGL() soon after)
-    update();
+    this->update();
+}
+
+void View::createBall() {
+    m_sceneBuilder.createBall(*m_scene_ptr);
+    this->update();
+}
+
+void View::clearScene() {
+    m_scene_ptr->clearObjects();
+    m_sceneBuilder.initScene(*m_scene_ptr);
+    this->update();
+}
+
+void View::settingsChanged() {
+    m_sceneBuilder.setParametersFromSettings(*m_scene_ptr);
+    this->update();
 }

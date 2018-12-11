@@ -38,6 +38,8 @@ public:
 
     void render(View *context, int msecLapsed = 0);
 
+    void clearObjects();
+
 private:
     int m_width, m_height;
     SceneCamera m_camera;
@@ -58,11 +60,12 @@ private:
 
     void setPhongSceneUniforms();
 
-    void setMatrixUniforms(CS123::GL::Shader *shader, View *context);
+    void setMatrixUniforms(CS123::GL::Shader *shader);
 
     void clearLights();
     void setLights();
 
+    void __render();
     void renderGeometry(CS123::GL::Shader *shader);
 };
 

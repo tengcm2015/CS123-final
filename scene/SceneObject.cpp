@@ -4,7 +4,6 @@
 #include "lib/CommonData.h"
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
 
-using namespace CS123::UTIL;
 using namespace CS123::PHYSICS;
 
 SceneObject::SceneObject()
@@ -19,16 +18,16 @@ SceneObject::SceneObject(const SceneObjectData &data)
 {
     for (auto &t: data.transformations) {
         switch (t.type) {
-            case TransformationType::TRANSFORMATION_TRANSLATE:
+            case CS123TransformationType::TRANSFORMATION_TRANSLATE:
                 this->pushMatrix(glm::translate(t.translate));
                 break;
-            case TransformationType::TRANSFORMATION_ROTATE:
+            case CS123TransformationType::TRANSFORMATION_ROTATE:
                 this->pushMatrix(glm::rotate(t.angle, t.rotate));
                 break;
-            case TransformationType::TRANSFORMATION_SCALE:
+            case CS123TransformationType::TRANSFORMATION_SCALE:
                 this->pushMatrix(glm::scale(t.scale));
                 break;
-            case TransformationType::TRANSFORMATION_MATRIX:
+            case CS123TransformationType::TRANSFORMATION_MATRIX:
                 this->pushMatrix(t.matrix);
         }
     }

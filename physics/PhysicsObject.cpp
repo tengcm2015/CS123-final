@@ -1,8 +1,6 @@
 #include "PhysicsObject.h"
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
 
-using namespace CS123::UTIL;
-
 namespace CS123 { namespace PHYSICS {
 
 PhysicsObject::PhysicsObject()
@@ -23,16 +21,16 @@ PhysicsObject::PhysicsObject(const PhysicsObjectData &data)
 {
     for (auto &t: data.transformations) {
         switch (t.type) {
-            case TransformationType::TRANSFORMATION_TRANSLATE:
+            case CS123TransformationType::TRANSFORMATION_TRANSLATE:
                 m_physicsTransform = glm::translate(t.translate) * m_physicsTransform;
                 break;
-            case TransformationType::TRANSFORMATION_ROTATE:
+            case CS123TransformationType::TRANSFORMATION_ROTATE:
                 m_physicsTransform = glm::rotate(t.angle, t.rotate) * m_physicsTransform;
                 break;
-            case TransformationType::TRANSFORMATION_SCALE:
+            case CS123TransformationType::TRANSFORMATION_SCALE:
                 m_physicsTransform = glm::scale(t.scale) * m_physicsTransform;
                 break;
-            case TransformationType::TRANSFORMATION_MATRIX:
+            case CS123TransformationType::TRANSFORMATION_MATRIX:
                 m_physicsTransform = t.matrix * m_physicsTransform;
         }
     }

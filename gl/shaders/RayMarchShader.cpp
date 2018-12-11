@@ -1,5 +1,6 @@
 #include "RayMarchShader.h"
 
+#include "lib/CS123Utils.h"
 #include "scene/SceneData.h"
 #include "gl/GLDebug.h"
 
@@ -31,7 +32,7 @@ void RayMarchShader::loadPrimitive(int id) {
         return;
     }
 
-    setUniformArrayByIndex("primitiveType"     , UTIL::as_integer(pp->type()), id);
+    setUniformArrayByIndex("primitiveType"     , UTILS::as_integer(pp->type()), id);
     setUniformArrayByIndex("primitiveTransform", pp->getModelTransform(), id);
 
     auto m = pp->getMaterial();
@@ -69,7 +70,7 @@ void RayMarchShader::loadPrimitive(int id) {
 
 void RayMarchShader::clearPrimitive(int id) {
     m_primitive_ptrs[id] = nullptr;
-    setUniformArrayByIndex("primitiveType", UTIL::as_integer(PrimitiveType::PRIMITIVE_NONE), id);
+    setUniformArrayByIndex("primitiveType", UTILS::as_integer(PrimitiveType::PRIMITIVE_NONE), id);
     setUniformArrayByIndex("primitiveTexID"  , -1, id);
     setUniformArrayByIndex("primitiveBumpID" , -1, id);
 }
@@ -129,7 +130,7 @@ void RayMarchShader::setLight(const SceneLightData &light) {
             break;
     }
 
-    SceneColor color = light.color;
+    RGBAf color = light.color;
     if (ignoreLight) color.r = color.g = color.b = 0;
 
     setUniformArrayByIndex("lightTypes", lightType, light.id);

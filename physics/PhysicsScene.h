@@ -21,6 +21,8 @@ public:
 
     std::shared_ptr<PhysicsObject> createObject(const PhysicsObjectData &data);
 
+    void clearObjects();
+
 private:
     PhysicsGlobalData m_data;
 

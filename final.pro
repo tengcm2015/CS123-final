@@ -24,9 +24,12 @@ win32 {
 SOURCES += main.cpp \
     glew-1.10.0/src/glew.c \
     ui/mainwindow.cpp \
+    ui/Databinding.cpp \
     ui/SceneBuilder.cpp \
+    ui/Settings.cpp \
     ui/view.cpp \
     lib/BGRA.cpp \
+    lib/CS123Utils.cpp \
     lib/ResourceLoader.cpp \
     shapes/CS123Shape.cpp \
     shapes/CS123Mesh.cpp \
@@ -64,7 +67,9 @@ SOURCES += main.cpp \
 HEADERS += ui_mainwindow.h \
     glew-1.10.0/include/GL/glew.h \
     ui/mainwindow.h \
+    ui/Databinding.h \
     ui/SceneBuilder.h \
+    ui/Settings.h \
     ui/view.h \
     shapes/CS123Shape.h \
     shapes/CS123Mesh.h \
@@ -76,8 +81,9 @@ HEADERS += ui_mainwindow.h \
     shapes/CS123Quad.cpp \
     shapes/CS123Primitive.h \
     lib/BGRA.h \
-    lib/ResourceLoader.h \
     lib/CommonData.h \
+    lib/CS123Utils.h \
+    lib/ResourceLoader.h \
     scene/Scene.h \
     scene/SceneCamera.h \
     scene/SceneData.h \

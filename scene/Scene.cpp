@@ -1,5 +1,6 @@
 #include "Scene.h"
 #include "ui/view.h"
+#include "ui/Settings.h"
 #include "lib/ResourceLoader.h"
 #include "gl/textures/Texture2D.h"
 
@@ -7,8 +8,6 @@
 
 using namespace CS123::GL;
 using namespace CS123::PHYSICS;
-
-//#define USE_RAYMARCHER
 
 Scene::Scene()
 : m_width(0), m_height(0)
@@ -21,6 +20,7 @@ Scene::Scene()
 , m_globalData{1,1,1,1}
 , m_physicsScene()
 {
+
     // load ray march shader
     std::string vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/quad.vert");
     std::string fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/rayMarcher.frag");
@@ -46,39 +46,39 @@ void Scene::setPhongSceneUniforms() {
     m_phongShader->setUniform("useArrowOffsets", false);
 }
 
-void Scene::setMatrixUniforms(Shader *shader, View *context) {
-#ifdef USE_RAYMARCHER
-    shader->setUniform("eye" , m_camera.getPosition().xyz());
-    shader->setUniform("look", m_camera.getLook().xyz());
-    shader->setUniform("up"  , m_camera.getV().xyz());
-    shader->setUniform("aspectRatio", m_camera.getAspectRatio());
-#else
-    shader->setUniform("p", m_camera.getProjectionMatrix());
-    shader->setUniform("v", m_camera.getViewMatrix());
-#endif
+void Scene::setMatrixUniforms(Shader *shader) {
+    if (settings.useRaymarching) {
+        shader->setUniform("eye" , m_camera.getPosition().xyz());
+        shader->setUniform("look", m_camera.getLook().xyz());
+        shader->setUniform("up"  , m_camera.getV().xyz());
+        shader->setUniform("aspectRatio", m_camera.getAspectRatio());
+    } else {
+        shader->setUniform("p", m_camera.getProjectionMatrix());
+        shader->setUniform("v", m_camera.getViewMatrix());
+    }
 }
 
 void Scene::clearLights() {
-#ifdef USE_RAYMARCHER
-    for (int i = 0; i < RayMarchShader::MAX_NUM_LIGHTS; ++i) {
-        m_renderShader->clearLight(i);
+    if (settings.useRaymarching) {
+        for (int i = 0; i < RayMarchShader::MAX_NUM_LIGHTS; ++i)
+            m_renderShader->clearLight(i);
+
+    } else {
+        for (int i = 0; i < PhongShader::MAX_NUM_LIGHTS; ++i)
+            m_phongShader->clearLight(i);
     }
-#else
-    for (int i = 0; i < PhongShader::MAX_NUM_LIGHTS; ++i) {
-        m_phongShader->clearLight(i);
-    }
-#endif
 }
 
 void Scene::setLights() {
     clearLights();
-#ifdef USE_RAYMARCHER
-    for (auto &l: m_sceneLights)
-        m_renderShader->setLight(l);
-#else
-    for (auto &l: m_sceneLights)
-        m_phongShader->setLight(l);
-#endif
+    if (settings.useRaymarching) {
+        for (auto &l: m_sceneLights)
+            m_renderShader->setLight(l);
+
+    } else {
+        for (auto &l: m_sceneLights)
+            m_phongShader->setLight(l);
+    }
 }
 
 void Scene::setScreenSize(int w, int h) {
@@ -86,6 +86,34 @@ void Scene::setScreenSize(int w, int h) {
     m_camera.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
     m_tmp_FBO = std::make_unique<FBO>(1, FBO::DEPTH_STENCIL_ATTACHMENT::DEPTH_ONLY, w, h,
                                        TextureParameters::WRAP_METHOD::CLAMP_TO_EDGE);
+}
+
+void Scene::__render() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    if (settings.useRaymarching) {
+        m_renderShader->bind();
+
+        setLights();
+        m_renderShader->reloadPrimitives();
+        setMatrixUniforms(m_renderShader.get());
+
+        m_fullScreenQuad.draw();
+
+        m_renderShader->unbind();
+
+    } else {
+        m_phongShader->bind();
+
+        setLights();
+        setPhongSceneUniforms();
+        setMatrixUniforms(m_phongShader.get());
+
+        renderGeometry(m_phongShader.get());
+
+        m_phongShader->unbind();
+
+    }
 }
 
 void Scene::render(View *context, int msecLapsed) {
@@ -97,43 +125,27 @@ void Scene::render(View *context, int msecLapsed) {
     // render scene
     glClearColor(0, 0, 0, 0);
 
-    m_tmp_FBO->bind();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (settings.useFXAA) {
+        m_tmp_FBO->bind();
 
-#ifdef USE_RAYMARCHER
-    m_renderShader->bind();
+        __render();
 
-    setLights();
-    m_renderShader->reloadPrimitives();
-    setMatrixUniforms(m_renderShader.get(), context);
+        //m_tmp_FBO->unbind();
+        context->makeCurrent();
+        glViewport(0, 0, m_width, m_height);
 
-    m_fullScreenQuad.draw();
+        m_tmp_FBO->getColorAttachment(0).bind();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    m_renderShader->unbind();
-#else
-    m_phongShader->bind();
+        m_filterShader->bind();
+        m_fullScreenQuad.draw();
+        m_filterShader->unbind();
 
-    setLights();
-    setPhongSceneUniforms();
-    setMatrixUniforms(m_phongShader.get(), context);
+        m_tmp_FBO->getColorAttachment(0).unbind();
 
-    renderGeometry(m_phongShader.get());
-
-    m_phongShader->unbind();
-#endif
-
-    //m_tmp_FBO->unbind();
-    context->makeCurrent();
-    glViewport(0, 0, m_width, m_height);
-
-    m_tmp_FBO->getColorAttachment(0).bind();
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    m_filterShader->bind();
-    m_fullScreenQuad.draw();
-    m_filterShader->unbind();
-
-    m_tmp_FBO->getColorAttachment(0).unbind();
+    } else {
+        __render();
+    }
 }
 
 void Scene::renderGeometry(Shader* shader) {
@@ -186,9 +198,8 @@ std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data) {
 std::shared_ptr<ScenePrimitive> Scene::createPrimitive(const ScenePrimitiveData &scenePrimitive) {
     auto primitive_ptr = std::make_shared<ScenePrimitive>(scenePrimitive);
     m_primitive_ptrs.push_back(primitive_ptr);
-#ifdef USE_RAYMARCHER
-    m_renderShader->insertPrimitive(primitive_ptr);
-#endif
+    if (settings.useRaymarching)
+        m_renderShader->insertPrimitive(primitive_ptr);
     return primitive_ptr;
 }
 
@@ -198,4 +209,10 @@ void Scene::addLight(const SceneLightData &sceneLight) {
 
 void Scene::setGlobal(const SceneGlobalData &global) {
     m_globalData = global;
+}
+
+void Scene::clearObjects() {
+    m_object_ptrs.clear();
+    m_primitive_ptrs.clear();
+    m_physicsScene.clearObjects();
 }
