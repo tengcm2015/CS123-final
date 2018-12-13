@@ -7,20 +7,18 @@
 #include "SceneBuilder.h"
 #include "scene/Scene.h"
 
+
 View::View(QWidget *parent)
 : QOpenGLWidget(parent)
 , m_time(), m_timer()
-, m_captureMouse(false)
+, m_isDragging(false)
 , m_sceneBuilder()
 , m_scene_ptr(nullptr)
 {
     // View needs all mouse move events, not just mouse drag events
     setMouseTracking(true);
 
-    // Hide the cursor
-    if(m_captureMouse) {
-        QApplication::setOverrideCursor(Qt::BlankCursor);
-    }
+//    QApplication::setOverrideCursor(Qt::CrossCursor);
 
     // View needs keyboard focus
     setFocusPolicy(Qt::StrongFocus);
@@ -82,12 +80,7 @@ void View::resizeGL(int w, int h)
     m_scene_ptr->render(this);
 }
 
-void View::mousePressEvent(QMouseEvent *event)
-{
-}
-
-void View::mouseMoveEvent(QMouseEvent *event)
-{
+glm::vec2 View::getMousePos(QMouseEvent *event) {
     // This starter code implements mouse capture, which gives the change in
     // mouse position since the last mouse movement. The mouse needs to be
     // recentered after every movement because it might otherwise run into
@@ -95,19 +88,50 @@ void View::mouseMoveEvent(QMouseEvent *event)
     // in that direction. Note that it is important to check that deltaX and
     // deltaY are not zero before recentering the mouse, otherwise there will
     // be an infinite loop of mouse move events.
-    if(m_captureMouse) {
-        int deltaX = event->x() - width() / 2;
-        int deltaY = event->y() - height() / 2;
-        if (!deltaX && !deltaY) return;
+
+    int deltaX = event->x() - width() / 2;
+    int deltaY = event->y() - height() / 2;
+
+    if (deltaX || deltaY)
         QCursor::setPos(mapToGlobal(QPoint(width() / 2, height() / 2)));
 
-        // TODO: Handle mouse movements here
+//    auto w = static_cast<float>(width());
+//    auto h = static_cast<float>(height());
+    return {deltaX, deltaY};
+}
+
+void View::mousePressEvent(QMouseEvent *event){
+    if (event->button() == Qt::RightButton) {
+        auto delta = this->getMousePos(event);
+        m_scene_ptr->mouseDown(delta.x, delta.y);
+        m_isDragging = true;
+        this->update();
     }
 }
 
-void View::mouseReleaseEvent(QMouseEvent *event)
+void View::mouseMoveEvent(QMouseEvent *event)
 {
+    if(m_isDragging) {
+        auto delta = this->getMousePos(event);
+        m_scene_ptr->mouseDragged(delta.x, delta.y);
+        this->update();
+    }
 }
+
+void View::mouseReleaseEvent(QMouseEvent *event) {
+    if (m_isDragging && event->button() == Qt::RightButton) {
+        auto delta = this->getMousePos(event);
+        m_scene_ptr->mouseUp(delta.x, delta.y);
+        m_isDragging = false;
+        this->update();
+    }
+}
+
+void View::wheelEvent(QWheelEvent *event) {
+    m_scene_ptr->mouseScrolled(event->delta());
+    this->update();
+}
+
 
 void View::keyPressEvent(QKeyEvent *event)
 {
@@ -119,6 +143,7 @@ void View::keyPressEvent(QKeyEvent *event)
 void View::keyReleaseEvent(QKeyEvent *event)
 {
 }
+
 
 void View::tick()
 {

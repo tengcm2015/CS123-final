@@ -14,15 +14,9 @@ static void initializeSceneLight(Scene &scene) {
     // Use a white directional light from the upper left corner
     auto lightDirection = glm::normalize(glm::vec4(1.f, -1.f, -1.f, 0.f));
 
-    auto &c = scene.getCamera();
-    glm::vec3 d = lightDirection.x * c.getU().xyz()
-                + lightDirection.y * c.getV().xyz()
-                + lightDirection.z * c.getW().xyz()
-                ;
-
     SceneLightData lightData;
     lightData.type = LightType::LIGHT_DIRECTIONAL,
-    lightData.dir = glm::vec4(d, 0),
+    lightData.dir = lightDirection,
     lightData.color = {1,1,1,1},
     lightData.id = 0;
 
@@ -148,19 +142,7 @@ void SceneBuilder::setBoxDataFromSettings() {
 const float STD_G = 9.80665;
 
 void SceneBuilder::setParametersFromSettings(Scene &scene) {
-    // TODO: set gravity based on camera positon
-//    auto &c = scene.getCamera();
-//    glm::vec3 g = settings.gravity.x * c.getU().xyz() - glm::vec3(2.0f);
-//                + settings.gravity.y * c.getV().xyz() - glm::vec3(2.0f);
-//                + settings.gravity.z * c.getW().xyz() - glm::vec3(2.0f);
-//                ;
-
-    auto &physicsScene = scene.getPhysicsScene();
-    physicsScene.setGlobal(PhysicsGlobalData {
-        .damping = 0.0,
-        .gravity = settings.gravity * STD_G / 10.f / 1000.f
-    });
-
+    scene.setGravity(settings.gravity * STD_G / 10.f / 1000.f);
     setSphereDataFromSettings();
     setBoxDataFromSettings();
 }

@@ -34,15 +34,29 @@ public:
 
     void setGlobal(const SceneGlobalData &global);
 
+    void setGravity(glm::vec3 gravity);
+
     void setScreenSize(int w, int h);
 
     void render(View *context, int msecLapsed = 0);
 
     void clearObjects();
 
+    void mouseDown(float deltaX, float deltaY);
+    void mouseDragged(float deltaX, float deltaY);
+    void mouseUp(float deltaX, float deltaY);
+    void mouseScrolled(float delta);
+
 private:
     int m_width, m_height;
+
     SceneCamera m_camera;
+    float m_cam_angleX, m_cam_angleY, m_zoomZ;
+    glm::vec3 m_gravity;
+    glm::mat4 m_gravityCoord_mat;
+
+    bool m_isDragging;
+    int oldX, oldY;
 
     CS123::GL::FullScreenQuad m_fullScreenQuad;
     std::unique_ptr<CS123::GL::FBO> m_tmp_FBO;
@@ -67,6 +81,10 @@ private:
 
     void __render();
     void renderGeometry(CS123::GL::Shader *shader);
+
+    SceneLightData alignLightWithCamera(const SceneLightData &l);
+    void updateGravity();
+    void updateSceneCamera();
 };
 
 

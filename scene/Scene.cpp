@@ -5,6 +5,7 @@
 #include "gl/textures/Texture2D.h"
 
 #include <sstream>
+#include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
 
 using namespace CS123::GL;
 using namespace CS123::PHYSICS;
@@ -12,6 +13,9 @@ using namespace CS123::PHYSICS;
 Scene::Scene()
 : m_width(0), m_height(0)
 , m_camera()
+, m_cam_angleX(45), m_cam_angleY(45)
+, m_zoomZ(-4)
+, m_gravity(0.0f)
 , m_fullScreenQuad()
 , m_tmp_FBO(nullptr)
 , m_renderShader(nullptr)
@@ -35,6 +39,9 @@ Scene::Scene()
     vertexSource = ResourceLoader::loadResourceFileToString(":/shaders/quad.vert");
     fragmentSource = ResourceLoader::loadResourceFileToString(":/shaders/FXAA.frag");
     m_filterShader = std::make_unique<Shader>(vertexSource, fragmentSource);
+
+    this->updateSceneCamera();
+    m_gravityCoord_mat = m_camera.getViewMatrix();
 }
 
 Scene::~Scene()
@@ -69,15 +76,21 @@ void Scene::clearLights() {
     }
 }
 
+SceneLightData Scene::alignLightWithCamera(const SceneLightData &l) {
+    SceneLightData lightData = l;
+    lightData.dir = glm::inverse(m_camera.getViewMatrix()) * l.dir;
+    return lightData;
+}
+
 void Scene::setLights() {
     clearLights();
     if (settings.useRaymarching) {
         for (auto &l: m_sceneLights)
-            m_renderShader->setLight(l);
+            m_renderShader->setLight(alignLightWithCamera(l));
 
     } else {
         for (auto &l: m_sceneLights)
-            m_phongShader->setLight(l);
+            m_phongShader->setLight(alignLightWithCamera(l));
     }
 }
 
@@ -86,6 +99,11 @@ void Scene::setScreenSize(int w, int h) {
     m_camera.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
     m_tmp_FBO = std::make_unique<FBO>(1, FBO::DEPTH_STENCIL_ATTACHMENT::DEPTH_ONLY, w, h,
                                        TextureParameters::WRAP_METHOD::CLAMP_TO_EDGE);
+}
+
+void Scene::setGravity(glm::vec3 gravity) {
+    m_gravity = gravity;
+    this->updateGravity();
 }
 
 void Scene::__render() {
@@ -215,4 +233,54 @@ void Scene::clearObjects() {
     m_object_ptrs.clear();
     m_primitive_ptrs.clear();
     m_physicsScene.clearObjects();
+}
+
+void Scene::mouseDown(float deltaX, float deltaY) {
+    oldX = deltaX;
+    oldY = deltaY;
+}
+
+
+void Scene::mouseDragged(float deltaX, float deltaY) {
+    m_cam_angleY -= deltaX - oldX;
+    m_cam_angleX += deltaY - oldY;
+    oldX = deltaX;
+    oldY = deltaY;
+
+    if (m_cam_angleX < -90) m_cam_angleX = -90;
+    if (m_cam_angleX > 90) m_cam_angleX = 90;
+
+    this->updateSceneCamera();
+    this->updateGravity();
+}
+
+void Scene::mouseUp(float deltaX, float deltaY) {
+}
+
+void Scene::mouseScrolled(float delta) {
+    // Use an exponential factor so the zoom increments are small when we are
+    // close to the object and large when we are far away from the object
+    m_zoomZ *= powf(0.999f, delta);
+
+    this->updateSceneCamera();
+}
+
+void Scene::updateSceneCamera() {
+    auto eye = glm::rotate(glm::radians(m_cam_angleY), glm::vec3(0.f, 1.f, 0.f))
+             * glm::rotate(glm::radians(m_cam_angleX), glm::vec3(1.f, 0.f, 0.f))
+             * glm::translate(glm::vec3(0.f, 0.f, m_zoomZ))
+             * glm::vec4(0, 0, 0, 1);
+
+    auto look = glm::vec4(-eye.xyz(), 0);
+    auto up = glm::vec4(0, 1, 0, 0);
+
+    m_camera.orientLook(eye, look, up);
+}
+
+void Scene::updateGravity() {
+    auto desc = m_physicsScene.getGlobal();
+    auto g = glm::vec4(m_gravity, 0);
+    auto cam2grav = glm::inverse(m_camera.getViewMatrix()) * m_gravityCoord_mat;
+    desc.gravity = (glm::length(m_gravity) * cam2grav * glm::normalize(g)).xyz();
+    m_physicsScene.setGlobal(desc);
 }

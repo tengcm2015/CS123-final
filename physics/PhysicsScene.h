@@ -15,6 +15,7 @@ public:
 
     virtual ~PhysicsScene();
 
+    PhysicsGlobalData getGlobal() { return m_data; }
     void setGlobal(const PhysicsGlobalData &data) { m_data = data; }
 
     void simulate(int msecLapsed = 0);

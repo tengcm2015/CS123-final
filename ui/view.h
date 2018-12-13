@@ -24,8 +24,8 @@ public slots:
 private:
     QTime m_time;
     QTimer m_timer;
-    bool m_captureMouse;
 
+    bool m_isDragging;
     SceneBuilder m_sceneBuilder;
     std::unique_ptr<Scene> m_scene_ptr;
 
@@ -33,9 +33,11 @@ private:
     void paintGL() override;
     void resizeGL(int w, int h) override;
 
+    glm::vec2 getMousePos(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void wheelEvent(QWheelEvent *event) override;
 
     void keyPressEvent(QKeyEvent *event) override;
     void keyReleaseEvent(QKeyEvent *event) override;
