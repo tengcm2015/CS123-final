@@ -139,5 +139,6 @@ void View::clearScene() {
 
 void View::settingsChanged() {
     m_sceneBuilder.setParametersFromSettings(*m_scene_ptr);
+    m_sceneBuilder.applyBoxSettings();
     this->update();
 }

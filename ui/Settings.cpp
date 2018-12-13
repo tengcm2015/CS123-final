@@ -44,6 +44,9 @@ void Settings::loadSettingsOrDefaults() {
     // createBall/radius
     radius = s.value("radius", .25f).toDouble();
 
+    // sceneSettings/boxTexture
+    boxTextureType = s.value("boxTextureType", TEXTURE_NONE).toInt();
+
     // sceneSettings/gravity
     gravity.x = s.value("gravityX", 0).toDouble();
     gravity.y = s.value("gravityY", -1).toDouble();
@@ -94,6 +97,9 @@ void Settings::saveSettings() {
     s.setValue("gravityX", gravity.x);
     s.setValue("gravityY", gravity.y);
     s.setValue("gravityZ", gravity.z);
+
+    // sceneSettings/boxTexture
+    s.setValue("boxTextureType", boxTextureType);
 
     // sceneSettings/features
     s.setValue("useRaymarching", useRaymarching);

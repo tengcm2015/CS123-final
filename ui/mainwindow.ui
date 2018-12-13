@@ -17,7 +17,7 @@
    <bool>true</bool>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QGridLayout" name="gridLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayout_9">
     <property name="leftMargin">
      <number>0</number>
     </property>
@@ -30,7 +30,7 @@
     <property name="bottomMargin">
      <number>0</number>
     </property>
-    <item row="0" column="0">
+    <item>
      <widget class="View" name="view" native="true">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -118,7 +118,7 @@
                </size>
               </property>
               <property name="currentIndex">
-               <number>0</number>
+               <number>1</number>
               </property>
               <widget class="QWidget" name="GLPage">
                <property name="geometry">
@@ -132,7 +132,7 @@
                <attribute name="label">
                 <string>GL</string>
                </attribute>
-               <layout class="QVBoxLayout" name="verticalLayout_4">
+               <layout class="QVBoxLayout" name="verticalLayout_6">
                 <item>
                  <widget class="QGroupBox" name="colorBox">
                   <property name="sizePolicy">
@@ -315,16 +315,16 @@
                     </widget>
                    </item>
                    <item>
-                    <widget class="QRadioButton" name="radioTextureMetal">
+                    <widget class="QRadioButton" name="radioTextureSmooth">
                      <property name="text">
-                      <string>Metal</string>
+                      <string>Smooth</string>
                      </property>
                     </widget>
                    </item>
                    <item>
-                    <widget class="QRadioButton" name="radioTextureMoss">
+                    <widget class="QRadioButton" name="radioTexturePatterned">
                      <property name="text">
-                      <string>Moss</string>
+                      <string>Patterned (with bump mapping)</string>
                      </property>
                     </widget>
                    </item>
@@ -779,7 +779,7 @@ Create Ball
         <attribute name="title">
          <string>Scene Settings</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_6">
+        <layout class="QVBoxLayout" name="verticalLayout_10">
          <item>
           <widget class="QGroupBox" name="gravityBox">
            <property name="sizePolicy">
@@ -858,6 +858,36 @@ Create Ball
               </property>
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="boxTexturesBox">
+           <property name="title">
+            <string>Box Textures</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_4">
+            <item>
+             <widget class="QRadioButton" name="radioBoxTextureNone">
+              <property name="text">
+               <string>None</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioBoxTextureSmooth">
+              <property name="text">
+               <string>Smooth</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioBoxTexturePatterned">
+              <property name="text">
+               <string>Patterned (with bump mapping)</string>
               </property>
              </widget>
             </item>

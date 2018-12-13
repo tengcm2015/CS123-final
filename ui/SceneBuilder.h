@@ -12,12 +12,15 @@ public:
     void initScene(Scene &scene);
     void createBall(Scene &scene);
     void setParametersFromSettings(Scene &scene);
+    void applyBoxSettings();
 
 private:
     void createBox(Scene &scene);
 
     void setSphereDataFromSettings();
     void setBoxDataFromSettings();
+
+    std::vector<std::weak_ptr<ScenePrimitive>> m_box_primitive_ptrs;
 
     SceneObjectData m_sphereObjectData;
     SceneObjectData m_quadObjectData;

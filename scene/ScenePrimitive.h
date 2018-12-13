@@ -22,6 +22,7 @@ public:
     SceneMaterial getMaterial()  const { return m_data.material; }
 
     bool textureUsed() const;
+    void setTexture(const SceneFileMap &textureFileMap);
     CS123::GL::Texture2D &getTexture2D() const;
     BGRA sampleTexture(const glm::vec2 &uv, const glm::vec2 &repeatUV) const;
 
@@ -36,6 +37,8 @@ public:
             float &t, glm::vec4 &normal, glm::vec2 &uv) const;
 
 protected:
+    void __setTexture(std::string filename);
+
     int m_p1, m_p2; float m_p3;
 
     glm::mat4 m_modelTransform;

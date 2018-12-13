@@ -33,6 +33,14 @@ public:
         return m_physicsObject_ptr.lock();
     }
 
+    virtual std::shared_ptr<SceneObject> getChildObject(int index) {
+        return m_object_ptrs.at(index).lock();
+    }
+
+    virtual std::shared_ptr<ScenePrimitive> getPrimitive(int index) {
+        return m_primitive_ptrs.at(index).lock();
+    }
+
     virtual SceneObject& update();
 
 protected:

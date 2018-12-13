@@ -54,6 +54,30 @@ void SceneBuilder::setSphereDataFromSettings() {
     m_sphereMaterial.cAmbient  = color / 5.f;
     m_sphereMaterial.cSpecular = RGBAf(1.0f);
     m_sphereMaterial.shininess = settings.shininess;
+
+    switch (settings.textureType) {
+        case TextureType::TEXTURE_SMOOTH:
+            m_sphereMaterial.textureMap.isUsed = true;
+            m_sphereMaterial.textureMap.filename = ":/textures/sphere_smooth.jpg";
+            m_sphereMaterial.textureMap.repeatU = 1;
+            m_sphereMaterial.textureMap.repeatV = 1;
+            m_sphereMaterial.blend = 1;
+            break;
+
+        case TextureType::TEXTURE_PATTERNED:
+            m_sphereMaterial.textureMap.isUsed = true;
+            m_sphereMaterial.textureMap.filename = ":/textures/sphere_patterned.jpg";
+            m_sphereMaterial.textureMap.repeatU = 1;
+            m_sphereMaterial.textureMap.repeatV = 1;
+            m_sphereMaterial.blend = 1;
+            break;
+
+        case TextureType::TEXTURE_NONE:
+        default:
+            m_sphereMaterial.textureMap.isUsed = false;
+            break;
+    }
+
     spherePrimitiveData.material = m_sphereMaterial;
 
     m_sphereObjectData.primitives.clear();
@@ -79,7 +103,32 @@ void SceneBuilder::setBoxDataFromSettings() {
     m_quadMaterial.cAmbient  = {0.1f, 0.1f, 0.1f, 1.0f};
     m_quadMaterial.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
     m_quadMaterial.shininess = 64;
+
+    switch (settings.boxTextureType) {
+        case TextureType::TEXTURE_SMOOTH:
+            m_quadMaterial.textureMap.isUsed = true;
+            m_quadMaterial.textureMap.filename = ":/textures/box_smooth.jpg";
+            m_quadMaterial.textureMap.repeatU = 1;
+            m_quadMaterial.textureMap.repeatV = 1;
+            m_quadMaterial.blend = 1;
+            break;
+
+        case TextureType::TEXTURE_PATTERNED:
+            m_quadMaterial.textureMap.isUsed = true;
+            m_quadMaterial.textureMap.filename = ":/textures/box_patterned.jpg";
+            m_quadMaterial.textureMap.repeatU = 2;
+            m_quadMaterial.textureMap.repeatV = 2;
+            m_quadMaterial.blend = 1;
+            break;
+
+        case TextureType::TEXTURE_NONE:
+        default:
+            m_quadMaterial.textureMap.isUsed = false;
+            break;
+    }
+
     quadPrimitiveData.material = m_quadMaterial;
+
 
     m_quadObjectData.primitives.clear();
     m_quadObjectData.primitives.push_back(quadPrimitiveData);
@@ -116,7 +165,16 @@ void SceneBuilder::setParametersFromSettings(Scene &scene) {
     setBoxDataFromSettings();
 }
 
+void SceneBuilder::applyBoxSettings() {
+    for (auto &pp: m_box_primitive_ptrs) {
+        if (auto sp = pp.lock())
+            sp->setTexture(m_quadMaterial.textureMap);
+    }
+}
+
 void SceneBuilder::createBox(Scene &scene) {
+    m_box_primitive_ptrs.clear();
+
     auto &physicsScene = scene.getPhysicsScene();
 
     // inward-faced cube
@@ -130,6 +188,8 @@ void SceneBuilder::createBox(Scene &scene) {
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
 
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
+
     // +z
     extTransform = glm::translate(glm::vec3(0, 0, 1));
     extTransform *= glm::rotate(PI, glm::vec3(1, 0, 0));
@@ -141,6 +201,8 @@ void SceneBuilder::createBox(Scene &scene) {
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
+
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
 
 
     // -y
@@ -155,6 +217,8 @@ void SceneBuilder::createBox(Scene &scene) {
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
 
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
+
     // +y
     extTransform = glm::translate(glm::vec3(0, 1, 0));
     extTransform *= glm::rotate(PI/2, glm::vec3(1, 0, 0));
@@ -166,6 +230,8 @@ void SceneBuilder::createBox(Scene &scene) {
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
+
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
 
 
     // -x
@@ -180,6 +246,8 @@ void SceneBuilder::createBox(Scene &scene) {
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
 
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
+
     // +x
     extTransform = glm::translate(glm::vec3(1, 0, 0));
     extTransform *= glm::rotate(-PI/2, glm::vec3(0, 1, 0));
@@ -191,6 +259,8 @@ void SceneBuilder::createBox(Scene &scene) {
     planePhysics_ptr->setModelTransform(extTransform);
 
     planeObject_ptr->assignPhysics(planePhysics_ptr);
+
+    m_box_primitive_ptrs.emplace_back(planeObject_ptr->getPrimitive(0));
 }
 
 void SceneBuilder::createBall(Scene &scene) {

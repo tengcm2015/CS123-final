@@ -46,26 +46,36 @@ ScenePrimitive::ScenePrimitive(const ScenePrimitiveData &data)
 , m_textureFileName()
 {
     auto &material = m_data.material;
-    if (material.textureMap.isUsed) {
-        if (textureCache.find(material.textureMap.filename) == textureCache.end()) {
-            // try to load image into cache
-            QImage image(material.textureMap.filename.data());
-
-            if (image.isNull()) {
-                std::cerr << "failed open image: " << material.textureMap.filename << std::endl;
-                return;
-            }
-
-            std::cout << "loaded image: " << material.textureMap.filename << std::endl;
-
-            textureCache.insert(std::make_pair(material.textureMap.filename, image));
-        }
-        m_textureFileName = material.textureMap.filename;
-    }
+    if (material.textureMap.isUsed)
+        __setTexture(material.textureMap.filename);
 }
 
 ScenePrimitive::~ScenePrimitive()
 {
+}
+
+void ScenePrimitive::__setTexture(std::string filename) {
+    if (textureCache.find(filename) == textureCache.end()) {
+        // try to load image into cache
+        QImage image(filename.data());
+
+        if (image.isNull()) {
+            std::cerr << "failed open image: " <<filename << std::endl;
+            return;
+        }
+
+        std::cout << "loaded image: " << filename << std::endl;
+
+        textureCache.insert(std::make_pair(filename, image));
+    }
+    m_textureFileName = filename;
+}
+
+void ScenePrimitive::setTexture(const SceneFileMap &textureMap) {
+    m_textureFileName.clear();
+    m_data.material.textureMap = textureMap;
+    if (textureMap.isUsed)
+        __setTexture(textureMap.filename);
 }
 
 bool ScenePrimitive::textureUsed() const {

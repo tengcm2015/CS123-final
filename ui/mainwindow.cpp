@@ -39,8 +39,8 @@ MainWindow::MainWindow(QWidget *parent)
             NUM_TEXTURE_TYPES,
             settings.textureType,
             ui->radioTextureNone,
-            ui->radioTextureMetal,
-            ui->radioTextureMoss))
+            ui->radioTextureSmooth,
+            ui->radioTexturePatterned))
 
     // createBall/GL/shininess
     BIND(FloatBinding::bindSliderAndTextbox(
@@ -81,6 +81,17 @@ MainWindow::MainWindow(QWidget *parent)
             ui->sliderGravityY, ui->valueGravityY, settings.gravity.y, -10.f, 10.f))
     BIND(FloatBinding::bindSliderAndTextbox(
             ui->sliderGravityZ, ui->valueGravityZ, settings.gravity.z, -10.f, 10.f))
+
+    QButtonGroup *boxTexturesButtonGroup = new QButtonGroup;
+
+    // sceneSettings/boxTextures
+    BIND(ChoiceBinding::bindRadioButtons(
+            boxTexturesButtonGroup,
+            NUM_TEXTURE_TYPES,
+            settings.boxTextureType,
+            ui->radioBoxTextureNone,
+            ui->radioBoxTextureSmooth,
+            ui->radioBoxTexturePatterned))
 
     // sceneSettings/features
     BIND(BoolBinding::bindCheckbox(ui->togglerRaymarching, settings.useRaymarching))

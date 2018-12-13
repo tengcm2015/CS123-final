@@ -15,8 +15,8 @@
 // Enumeration values for the Filters that the user can select in the GUI.
 enum TextureType {
     TEXTURE_NONE,
-    TEXTURE_METAL,
-    TEXTURE_MOSS,
+    TEXTURE_SMOOTH,
+    TEXTURE_PATTERNED,
     NUM_TEXTURE_TYPES
 };
 
@@ -50,6 +50,9 @@ struct Settings {
 
     // sceneSettings/gravity
     glm::vec3 gravity;
+
+    // sceneSettings/boxTexture
+    int boxTextureType;
 
     // sceneSettings/features
     bool useRaymarching;
