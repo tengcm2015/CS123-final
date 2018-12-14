@@ -92,8 +92,8 @@ glm::vec2 View::getMousePos(QMouseEvent *event) {
     int deltaX = event->x() - width() / 2;
     int deltaY = event->y() - height() / 2;
 
-    if (deltaX || deltaY)
-        QCursor::setPos(mapToGlobal(QPoint(width() / 2, height() / 2)));
+//    if (deltaX || deltaY)
+//        QCursor::setPos(mapToGlobal(QPoint(width() / 2, height() / 2)));
 
 //    auto w = static_cast<float>(width());
 //    auto h = static_cast<float>(height());
@@ -157,6 +157,7 @@ void View::createBall() {
 }
 
 void View::clearScene() {
+    m_scene_ptr->clearLights();
     m_scene_ptr->clearObjects();
     m_sceneBuilder.initScene(*m_scene_ptr);
     this->update();

@@ -48,33 +48,6 @@ Scene::~Scene()
 {
 }
 
-void Scene::setPhongSceneUniforms() {
-    m_phongShader->setUniform("useLighting", true);
-    m_phongShader->setUniform("useArrowOffsets", false);
-}
-
-void Scene::setMatrixUniforms(Shader *shader) {
-    if (settings.useRaymarching) {
-        shader->setUniform("eye" , m_camera.getPosition().xyz());
-        shader->setUniform("look", m_camera.getLook().xyz());
-        shader->setUniform("up"  , m_camera.getV().xyz());
-        shader->setUniform("aspectRatio", m_camera.getAspectRatio());
-    } else {
-        shader->setUniform("p", m_camera.getProjectionMatrix());
-        shader->setUniform("v", m_camera.getViewMatrix());
-    }
-}
-
-void Scene::clearLights() {
-    if (settings.useRaymarching) {
-        for (int i = 0; i < RayMarchShader::MAX_NUM_LIGHTS; ++i)
-            m_renderShader->clearLight(i);
-
-    } else {
-        for (int i = 0; i < PhongShader::MAX_NUM_LIGHTS; ++i)
-            m_phongShader->clearLight(i);
-    }
-}
 
 SceneLightData Scene::alignLightWithCamera(const SceneLightData &l) {
     SceneLightData lightData = l;
@@ -82,28 +55,34 @@ SceneLightData Scene::alignLightWithCamera(const SceneLightData &l) {
     return lightData;
 }
 
-void Scene::setLights() {
-    clearLights();
-    if (settings.useRaymarching) {
-        for (auto &l: m_sceneLights)
-            m_renderShader->setLight(alignLightWithCamera(l));
+void Scene::setRaymarchSceneUniforms() {
+    m_renderShader->setUniform("eye" , m_camera.getPosition().xyz());
+    m_renderShader->setUniform("look", m_camera.getLook().xyz());
+    m_renderShader->setUniform("up"  , m_camera.getV().xyz());
+    m_renderShader->setUniform("aspectRatio", m_camera.getAspectRatio());
 
-    } else {
-        for (auto &l: m_sceneLights)
-            m_phongShader->setLight(alignLightWithCamera(l));
-    }
+    for (int i = 0; i < RayMarchShader::MAX_NUM_LIGHTS; ++i)
+        m_renderShader->clearLight(i);
+    for (int i = 0; i < m_sceneLights.size(); ++i)
+        m_renderShader->setLight(alignLightWithCamera(m_sceneLights[i]), i);
+
+    for (int i = 0; i < RayMarchShader::MAX_PRIMITIVES; ++i)
+        m_renderShader->clearPrimitive(i);
+    for (int i = 0; i < m_primitive_ptrs.size(); ++i)
+        m_renderShader->setPrimitive(m_primitive_ptrs[i], i);
 }
 
-void Scene::setScreenSize(int w, int h) {
-    m_width = w, m_height = h;
-    m_camera.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
-    m_tmp_FBO = std::make_unique<FBO>(1, FBO::DEPTH_STENCIL_ATTACHMENT::DEPTH_ONLY, w, h,
-                                       TextureParameters::WRAP_METHOD::CLAMP_TO_EDGE);
-}
+void Scene::setPhongSceneUniforms() {
+    m_phongShader->setUniform("p", m_camera.getProjectionMatrix());
+    m_phongShader->setUniform("v", m_camera.getViewMatrix());
 
-void Scene::setGravity(glm::vec3 gravity) {
-    m_gravity = gravity;
-    this->updateGravity();
+    m_phongShader->setUniform("useLighting", true);
+    m_phongShader->setUniform("useArrowOffsets", false);
+
+    for (int i = 0; i < PhongShader::MAX_NUM_LIGHTS; ++i)
+        m_phongShader->clearLight(i);
+    for (int i = 0; i < m_sceneLights.size(); ++i)
+        m_phongShader->setLight(alignLightWithCamera(m_sceneLights[i]), i);
 }
 
 void Scene::__render() {
@@ -111,24 +90,14 @@ void Scene::__render() {
 
     if (settings.useRaymarching) {
         m_renderShader->bind();
-
-        setLights();
-        m_renderShader->reloadPrimitives();
-        setMatrixUniforms(m_renderShader.get());
-
+        setRaymarchSceneUniforms();
         m_fullScreenQuad.draw();
-
         m_renderShader->unbind();
 
     } else {
         m_phongShader->bind();
-
-        setLights();
         setPhongSceneUniforms();
-        setMatrixUniforms(m_phongShader.get());
-
         renderGeometry(m_phongShader.get());
-
         m_phongShader->unbind();
 
     }
@@ -198,6 +167,14 @@ void Scene::renderGeometry(Shader* shader) {
     }
 }
 
+
+void Scene::setScreenSize(int w, int h) {
+    m_width = w, m_height = h;
+    m_camera.setAspectRatio(static_cast<float>(w) / static_cast<float>(h));
+    m_tmp_FBO = std::make_unique<FBO>(1, FBO::DEPTH_STENCIL_ATTACHMENT::DEPTH_ONLY, w, h,
+                                       TextureParameters::WRAP_METHOD::CLAMP_TO_EDGE);
+}
+
 std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data) {
     auto obj_ptr = std::make_shared<SceneObject>(data);
     m_object_ptrs.push_back(obj_ptr);
@@ -216,10 +193,9 @@ std::shared_ptr<SceneObject> Scene::createObject(const SceneObjectData &data) {
 std::shared_ptr<ScenePrimitive> Scene::createPrimitive(const ScenePrimitiveData &scenePrimitive) {
     auto primitive_ptr = std::make_shared<ScenePrimitive>(scenePrimitive);
     m_primitive_ptrs.push_back(primitive_ptr);
-    if (settings.useRaymarching)
-        m_renderShader->insertPrimitive(primitive_ptr);
     return primitive_ptr;
 }
+
 
 void Scene::addLight(const SceneLightData &sceneLight) {
     m_sceneLights.push_back(sceneLight);
@@ -229,17 +205,47 @@ void Scene::setGlobal(const SceneGlobalData &global) {
     m_globalData = global;
 }
 
+void Scene::setGravity(glm::vec3 gravity) {
+    m_gravity = gravity;
+    this->updateGravity();
+}
+
+void Scene::clearLights() {
+    m_sceneLights.clear();
+}
+
 void Scene::clearObjects() {
     m_object_ptrs.clear();
     m_primitive_ptrs.clear();
     m_physicsScene.clearObjects();
 }
 
+
+void Scene::updateSceneCamera() {
+    auto eye = glm::rotate(glm::radians(m_cam_angleY), glm::vec3(0.f, 1.f, 0.f))
+             * glm::rotate(glm::radians(m_cam_angleX), glm::vec3(1.f, 0.f, 0.f))
+             * glm::translate(glm::vec3(0.f, 0.f, m_zoomZ))
+             * glm::vec4(0, 0, 0, 1);
+
+    auto look = glm::vec4(-eye.xyz(), 0);
+    auto up = glm::vec4(0, 1, 0, 0);
+
+    m_camera.orientLook(eye, look, up);
+}
+
+void Scene::updateGravity() {
+    auto desc = m_physicsScene.getGlobal();
+    auto g = glm::vec4(m_gravity, 0);
+    auto cam2grav = glm::inverse(m_camera.getViewMatrix()) * m_gravityCoord_mat;
+    desc.gravity = (glm::length(m_gravity) * cam2grav * glm::normalize(g)).xyz();
+    m_physicsScene.setGlobal(desc);
+}
+
+
 void Scene::mouseDown(float deltaX, float deltaY) {
     oldX = deltaX;
     oldY = deltaY;
 }
-
 
 void Scene::mouseDragged(float deltaX, float deltaY) {
     m_cam_angleY -= deltaX - oldX;
@@ -263,24 +269,4 @@ void Scene::mouseScrolled(float delta) {
     m_zoomZ *= powf(0.999f, delta);
 
     this->updateSceneCamera();
-}
-
-void Scene::updateSceneCamera() {
-    auto eye = glm::rotate(glm::radians(m_cam_angleY), glm::vec3(0.f, 1.f, 0.f))
-             * glm::rotate(glm::radians(m_cam_angleX), glm::vec3(1.f, 0.f, 0.f))
-             * glm::translate(glm::vec3(0.f, 0.f, m_zoomZ))
-             * glm::vec4(0, 0, 0, 1);
-
-    auto look = glm::vec4(-eye.xyz(), 0);
-    auto up = glm::vec4(0, 1, 0, 0);
-
-    m_camera.orientLook(eye, look, up);
-}
-
-void Scene::updateGravity() {
-    auto desc = m_physicsScene.getGlobal();
-    auto g = glm::vec4(m_gravity, 0);
-    auto cam2grav = glm::inverse(m_camera.getViewMatrix()) * m_gravityCoord_mat;
-    desc.gravity = (glm::length(m_gravity) * cam2grav * glm::normalize(g)).xyz();
-    m_physicsScene.setGlobal(desc);
 }

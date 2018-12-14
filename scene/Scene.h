@@ -38,9 +38,10 @@ public:
 
     void setScreenSize(int w, int h);
 
-    void render(View *context, int msecLapsed = 0);
-
+    void clearLights();
     void clearObjects();
+
+    void render(View *context, int msecLapsed = 0);
 
     void mouseDown(float deltaX, float deltaY);
     void mouseDragged(float deltaX, float deltaY);
@@ -73,11 +74,7 @@ private:
     CS123::PHYSICS::PhysicsScene m_physicsScene;
 
     void setPhongSceneUniforms();
-
-    void setMatrixUniforms(CS123::GL::Shader *shader);
-
-    void clearLights();
-    void setLights();
+    void setRaymarchSceneUniforms();
 
     void __render();
     void renderGeometry(CS123::GL::Shader *shader);

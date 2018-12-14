@@ -185,6 +185,9 @@ bool ScenePrimitive::castRay(const glm::vec4 &startPoint, const glm::vec4 &world
         case PrimitiveType::PRIMITIVE_MESH:
             // TODO: mesh?
             break;
+
+        case PrimitiveType::PRIMITIVE_NONE:
+            /* ignore */;
     }
 
     if (hit) {

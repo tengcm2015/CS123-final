@@ -19,6 +19,15 @@ out vec4 fragColor;
 
 #define DISPLACEMENT_FACTOR 0.1
 
+#define NO_TEX                0
+#define SPHERE_SMOOTH_TEX     1
+#define SPHERE_PATTERNED_TEX  2
+#define SPHERE_PATTERNED_BUMP 3
+#define QUAD_SMOOTH_TEX       4
+#define QUAD_PATTERNED_TEX    5
+#define QUAD_PATTERNED_BUMP   6
+
+
 // camera information
 uniform vec3  eye;
 uniform vec3  look;
@@ -35,8 +44,13 @@ uniform vec3 lightColors    [MAX_LIGHTS];
 //uniform vec3 lightAttenuations[MAX_LIGHTS]; // Constant, linear, and quadratic term
 
 // Textures
-const int MAX_SAMPLERS = 16;
-uniform sampler2D samplers[MAX_SAMPLERS];
+const int MAX_SAMPLERS = 6;
+uniform sampler2D sphereSmoothTex;
+uniform sampler2D spherePatternedTex;
+uniform sampler2D spherePatternedBump;
+uniform sampler2D quadSmoothTex;
+uniform sampler2D quadPatternedTex;
+uniform sampler2D quadPatternedBump;
 
 // Uniform number limit: 4096
 // Primitive data
@@ -86,10 +100,10 @@ float sdSphere(vec3 p) {
 
 float dot2(vec3 v) { return dot(v,v); }
 float udQuad(vec3 p) {
-    vec3 a = vec3( 0.5,  0.5, 0.0);
-    vec3 b = vec3( 0.5, -0.5, 0.0);
-    vec3 c = vec3(-0.5,  0.5, 0.0);
-    vec3 d = vec3(-0.5, -0.5, 0.0);
+    vec3 a = vec3(-0.5, -0.5, 0.0);
+    vec3 b = vec3(-0.5,  0.5, 0.0);
+    vec3 c = vec3( 0.5,  0.5, 0.0);
+    vec3 d = vec3( 0.5, -0.5, 0.0);
 
     vec3 ba = b - a; vec3 pa = p - a;
     vec3 cb = c - b; vec3 pb = p - b;
@@ -120,29 +134,61 @@ PrimitiveDist map(vec3 p) {
     float min_dist = 1.0 / 0.0; // requires GLSL 4.1+ to be infinite
 
 //    for (int i = 0; i < MAX_PRIMITIVES; i++) {
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 10; i++) {
         mat4 transform = primitiveTransform[i];
 
         // assuming uniform scaling
-//        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
-        float scalingFactor = 1.0;
+        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
+//        float scalingFactor = 1.0;
 //        mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
 //        vec3 translationVector = transform[3].xyz;
         vec3 obj_p = vec3(inverse(transform) * vec4(p, 1.0));
 
         float d = min_dist;
         switch (primitiveType[i]) {
-            case PRIMITIVE_SPHERE:
-                d = sdSphere(obj_p) * scalingFactor;
-                break;
+        case PRIMITIVE_SPHERE:
+            d = sdSphere(obj_p) * scalingFactor;
+            break;
 
-            case PRIMITIVE_QUAD:
-                //d = udQuad(obj_p) * scalingFactor;
-                break;
+        case PRIMITIVE_QUAD:
+            if (obj_p.z > 0) // do not show if faced backward
+                d = udQuad(obj_p) * scalingFactor;
+            break;
 
-            default:
-                /* NOT IMPLEMENTED */
-                break;
+        default:
+            /* NOT IMPLEMENTED */
+            break;
+        }
+
+        if (d < min_dist) {
+            min_index = i;
+            min_dist = d;
+        }
+    }
+
+    return PrimitiveDist(min_dist, min_index);
+}
+
+PrimitiveDist mapNoPlane(vec3 p) {
+    int   min_index = -1;
+    float min_dist = 1.0 / 0.0; // requires GLSL 4.1+ to be infinite
+
+//    for (int i = 0; i < MAX_PRIMITIVES; i++) {
+    for (int i = 0; i < 10; i++) {
+        mat4 transform = primitiveTransform[i];
+        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
+        vec3 obj_p = vec3(inverse(transform) * vec4(p, 1.0));
+
+        float d = min_dist;
+        switch (primitiveType[i]) {
+        case PRIMITIVE_SPHERE:
+            d = sdSphere(obj_p) * scalingFactor;
+            break;
+
+            /* PRIMITIVE_QUAD IGNORED */
+        default:
+            /* NOT IMPLEMENTED */
+            break;
         }
 
         if (d < min_dist) {
@@ -172,7 +218,7 @@ float shadow(vec3 ro, vec3 rd, float k) {
 
     for(int i = 0; i < 30; i++) {
         if(marchDist > boundingVolume) continue;
-        float h = map(ro + rd * marchDist).dist;
+        float h = mapNoPlane(ro + rd * marchDist).dist;
         if (h < threshold) {
             darkness = 0.0;
             break;
@@ -208,29 +254,37 @@ PrimitiveDist raymarch(vec3 ro, vec3 rd) {
     return ret;
 }
 
+vec3 getTex(int texID, vec3 pos, vec3 nor) {
+    switch (texID) {
+    case SPHERE_SMOOTH_TEX:
+        return texCube(sphereSmoothTex, pos, nor);
+    case SPHERE_PATTERNED_TEX:
+        return texCube(spherePatternedTex, pos, nor);
+    case SPHERE_PATTERNED_BUMP:
+        return texCube(spherePatternedBump, pos, nor);
+    case QUAD_SMOOTH_TEX:
+        return texCube(quadSmoothTex, pos, nor);
+    case QUAD_PATTERNED_TEX:
+        return texCube(quadPatternedTex, pos, nor);
+    case QUAD_PATTERNED_BUMP:
+        return texCube(quadPatternedBump, pos, nor);
+    default:
+        return vec3(0.0);
+    }
+}
+
 vec3 render(vec3 ro, vec3 rd, float t, int index) {
     vec3 pos = ro + rd * t;
+    // Normal vector
     vec3 nor = calcNormal(pos);
 
-    vec3 texture = vec3(0.0f);
-    float blend = 0.0;
-    int texID = primitiveTexID[index];
-    if (texID >= 0) {
-        texture = texCube(samplers[texID], pos, nor);
-        blend = primitiveBlend[index];
-    } else {
-        /* do nothing */
-    }
+    vec3 texture = getTex(primitiveTexID[index], pos, nor);
+    float blend = primitiveBlend[index];
 
-    texID = primitiveBumpID[index];
-    if (texID >= 0) {
-        texDisplace = texCube(samplers[texID], pos, nor).x;
-    } else {
-        texDisplace = 0;
-    }
+    texDisplace = getTex(primitiveBumpID[index], pos, nor).x;
 
+    // recalculate pos and nor with bump applied
     pos = ro + rd * (t + texDisplace);
-    // Normal vector
     nor = calcNormal(pos);
 
     // this useless line prevent GLSL optimization from overwriting primitiveShininess

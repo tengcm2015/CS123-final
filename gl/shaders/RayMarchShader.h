@@ -13,25 +13,20 @@ namespace CS123 { namespace GL {
 class RayMarchShader : public Shader {
 public:
     static const int MAX_NUM_LIGHTS = 10;
-    static const int MAX_SAMPLERS = 16;
+    static const int MAX_SAMPLERS = 6;
     static const int MAX_PRIMITIVES = 50;
 
     RayMarchShader(const std::string &vertexSource, const std::string &fragmentSource);
     RayMarchShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource);
 
-    void insertPrimitive(const std::shared_ptr<ScenePrimitive> &pp);
-    void deletePrimitive(const std::shared_ptr<ScenePrimitive> &primitive);
-    void reloadPrimitives();
+    void setPrimitive(const std::shared_ptr<ScenePrimitive> &pp, int id);
+    void clearPrimitive(int id);
 
-    void setLight(const SceneLightData &light);
+    void setLight(const SceneLightData &light, int id);
     void clearLight(int id);
 
 private:
-    void loadPrimitive(int id);
-    void clearPrimitive(int id);
-
-    std::array<std::shared_ptr<ScenePrimitive>, MAX_PRIMITIVES> m_primitive_ptrs;
-    std::array<std::shared_ptr<Texture2D>, MAX_SAMPLERS> m_texture2D_ptrs;
+    void setSampler(TextureRole role, const Texture2D &t);
 };
 
 }}

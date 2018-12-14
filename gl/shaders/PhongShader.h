@@ -16,7 +16,7 @@ public:
     PhongShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource);
 
     void applyMaterial(const SceneMaterial &material);
-    void setLight(const SceneLightData &light);
+    void setLight(const SceneLightData &light, int id);
     void clearLight(int id);
 };
 

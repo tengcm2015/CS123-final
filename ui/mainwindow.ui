@@ -44,7 +44,7 @@
   </widget>
   <widget class="QDockWidget" name="dockWidget">
    <property name="floating">
-    <bool>true</bool>
+    <bool>false</bool>
    </property>
    <property name="features">
     <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
@@ -53,7 +53,7 @@
     <set>Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Tools</string>
+    <string>Too&amp;ls</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
@@ -125,8 +125,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>341</width>
-                 <height>418</height>
+                 <width>308</width>
+                 <height>441</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -409,8 +409,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>341</width>
-                 <height>418</height>
+                 <width>308</width>
+                 <height>441</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -887,7 +887,7 @@ Create Ball
             <item>
              <widget class="QRadioButton" name="radioBoxTexturePatterned">
               <property name="text">
-               <string>Patterned (with bump mapping)</string>
+               <string>Patterned (with bump &amp;mapping)</string>
               </property>
              </widget>
             </item>

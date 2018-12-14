@@ -11,26 +11,16 @@ namespace CS123 { namespace GL {
 RayMarchShader::RayMarchShader(const std::string &vertexSource, const std::string &fragmentSource)
 : Shader(vertexSource, fragmentSource)
 {
-    m_texture2D_ptrs.fill(nullptr);
-    for (int i = 0; i < RayMarchShader::MAX_PRIMITIVES; ++i)
-        clearPrimitive(i);
 }
 
 RayMarchShader::RayMarchShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource)
 : Shader(vertexSource, geometrySource, fragmentSource)
 {
-    m_texture2D_ptrs.fill(nullptr);
-    for (int i = 0; i < RayMarchShader::MAX_PRIMITIVES; ++i)
-        clearPrimitive(i);
 }
 
-
-void RayMarchShader::loadPrimitive(int id) {
-    auto pp = m_primitive_ptrs[id];
-    if (pp == nullptr) {
-        clearPrimitive(id);
+void RayMarchShader::setPrimitive(const std::shared_ptr<ScenePrimitive> &pp, int id) {
+    if (id < 0 || id >= MAX_PRIMITIVES)
         return;
-    }
 
     setUniformArrayByIndex("primitiveType"     , UTILS::as_integer(pp->type()), id);
     setUniformArrayByIndex("primitiveTransform", pp->getModelTransform(), id);
@@ -48,63 +38,40 @@ void RayMarchShader::loadPrimitive(int id) {
     setUniformArrayByIndex("primitiveIOR"        , m.ior      , id);
 
     if (m.textureMap.isUsed) {
-        setUniformArrayByIndex("primitiveTexID", id, id);
+        int texID = UTILS::as_integer(m.textureMap.role);
+        setUniformArrayByIndex("primitiveTexID", texID, id);
         setUniformArrayByIndex("primitiveBlend", m.blend, id);
-        std::ostringstream os;
-        os << id;
-        std::string indexString = "[" + os.str() + "]"; // e.g. [0], [1], etc.
-        setTexture(indexString, pp->getTexture2D());
+        this->setSampler(m.textureMap.role, pp->getTexture2D());
 
     } else {
-        setUniformArrayByIndex("primitiveTexID", -1, id);
+        setUniformArrayByIndex("primitiveTexID", UTILS::as_integer(TextureRole::NO_TEX), id);
     }
 
     if (m.bumpMap.isUsed) {
-        setUniformArrayByIndex("primitiveBumpID", id, id);
+        int texID = UTILS::as_integer(m.bumpMap.role);
+        setUniformArrayByIndex("primitiveBumpID", texID, id);
+        this->setSampler(m.textureMap.role, pp->getTexture2D());
 
     } else {
-        setUniformArrayByIndex("primitiveBumpID", -1, id);
+        setUniformArrayByIndex("primitiveBumpID", UTILS::as_integer(TextureRole::NO_TEX), id);
     }
 }
 
 
 void RayMarchShader::clearPrimitive(int id) {
-    m_primitive_ptrs[id] = nullptr;
+    if (id < 0 || id >= MAX_PRIMITIVES)
+        return;
+
     setUniformArrayByIndex("primitiveType", UTILS::as_integer(PrimitiveType::PRIMITIVE_NONE), id);
     setUniformArrayByIndex("primitiveTexID"  , -1, id);
     setUniformArrayByIndex("primitiveBumpID" , -1, id);
 }
 
 
-void RayMarchShader::insertPrimitive(const std::shared_ptr<ScenePrimitive> &pp) {
-    int id = -1;
-    while (id < RayMarchShader::MAX_PRIMITIVES) {
-        if (m_primitive_ptrs[++id] == nullptr) {
-            m_primitive_ptrs[id] = pp;
-            break;
-        }
-    }
-    if (id >= RayMarchShader::MAX_PRIMITIVES)
+void RayMarchShader::setLight(const SceneLightData &light, int id) {
+    if (id < 0 || id >= MAX_NUM_LIGHTS)
         return;
 
-    loadPrimitive(id);
-}
-
-void RayMarchShader::deletePrimitive(const std::shared_ptr<ScenePrimitive> &pp) {
-    for (int i = 0; i < RayMarchShader::MAX_PRIMITIVES; ++i) {
-        if (m_primitive_ptrs[i] == pp) {
-            clearPrimitive(i);
-            break;
-        }
-    }
-}
-
-void RayMarchShader::reloadPrimitives() {
-    for (int i = 0; i < RayMarchShader::MAX_PRIMITIVES; ++i)
-        loadPrimitive(i);
-}
-
-void RayMarchShader::setLight(const SceneLightData &light) {
     bool ignoreLight = false;
 
     GLint lightType;
@@ -114,14 +81,14 @@ void RayMarchShader::setLight(const SceneLightData &light) {
         case LightType::LIGHT_POINT:
             lightType = 0;
             name = "lightPositions";
-            setUniformArrayByIndex(name, light.pos.xyz(), light.id);
+            setUniformArrayByIndex(name, light.pos.xyz(), id);
             //if (!settings.usePointLights) ignoreLight = true;
             break;
         case LightType::LIGHT_DIRECTIONAL:
             lightType = 1;
             ndir = glm::normalize(light.dir.xyz());
             name = "lightDirections";
-            setUniformArrayByIndex(name, ndir, light.id);
+            setUniformArrayByIndex(name, ndir, id);
             //if (!settings.useDirectionalLights) ignoreLight = true;
             break;
         default:
@@ -133,14 +100,50 @@ void RayMarchShader::setLight(const SceneLightData &light) {
     RGBAf color = light.color;
     if (ignoreLight) color.r = color.g = color.b = 0;
 
-    setUniformArrayByIndex("lightTypes", lightType, light.id);
-    setUniformArrayByIndex("lightColors", glm::vec3(color.r, color.g, color.b), light.id);
+    setUniformArrayByIndex("lightTypes", lightType, id);
+    setUniformArrayByIndex("lightColors", glm::vec3(color.r, color.g, color.b), id);
 //    setUniformArrayByIndex("lightAttenuations", light.function, light.id);
 }
 
 void RayMarchShader::clearLight(int id) {
+    if (id < 0 || id >= MAX_NUM_LIGHTS)
+        return;
     setUniformArrayByIndex("lightColors", glm::vec3(0.0f), id);
 }
 
+
+void RayMarchShader::setSampler(TextureRole role, const Texture2D &t) {
+    std::string uniformName;
+    switch (role) {
+    case TextureRole::SPHERE_SMOOTH_TEX:
+        uniformName = "sphereSmoothTex";
+        break;
+
+    case TextureRole::SPHERE_PATTERNED_TEX:
+        uniformName = "spherePatternedTex";
+        break;
+
+    case TextureRole::SPHERE_PATTERNED_BUMP:
+        uniformName = "spherePatternedBump";
+        break;
+
+    case TextureRole::QUAD_SMOOTH_TEX:
+        uniformName = "quadSmoothTex";
+        break;
+
+    case TextureRole::QUAD_PATTERNED_TEX:
+        uniformName = "quadPatternedTex";
+        break;
+
+    case TextureRole::QUAD_PATTERNED_BUMP:
+        uniformName = "quadPatternedBump";
+        break;
+
+    case TextureRole::NO_TEX:
+        return;
+    }
+
+    this->setTexture(uniformName, t);
+}
 
 }}

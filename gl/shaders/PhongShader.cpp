@@ -29,7 +29,10 @@ void PhongShader::applyMaterial(const SceneMaterial &material) {
     setUniform("shininess", material.shininess);
 }
 
-void PhongShader::setLight(const SceneLightData &light) {
+void PhongShader::setLight(const SceneLightData &light, int id) {
+    if (id < 0 || id >= MAX_NUM_LIGHTS)
+        return;
+
     bool ignoreLight = false;
 
     GLint lightType;
@@ -39,14 +42,14 @@ void PhongShader::setLight(const SceneLightData &light) {
         case LightType::LIGHT_POINT:
             lightType = 0;
             name = "lightPositions";
-            setUniformArrayByIndex(name, light.pos.xyz(), light.id);
+            setUniformArrayByIndex(name, light.pos.xyz(), id);
             //if (!settings.usePointLights) ignoreLight = true;
             break;
         case LightType::LIGHT_DIRECTIONAL:
             lightType = 1;
             ndir = glm::normalize(light.dir.xyz());
             name = "lightDirections";
-            setUniformArrayByIndex(name, ndir, light.id);
+            setUniformArrayByIndex(name, ndir, id);
             //if (!settings.useDirectionalLights) ignoreLight = true;
             break;
         default:
@@ -58,12 +61,14 @@ void PhongShader::setLight(const SceneLightData &light) {
     RGBAf color = light.color;
     if (ignoreLight) color.r = color.g = color.b = 0;
 
-    setUniformArrayByIndex("lightTypes", lightType, light.id);
-    setUniformArrayByIndex("lightColors", glm::vec3(color.r, color.g, color.b), light.id);
-//    setUniformArrayByIndex("lightAttenuations", light.function, light.id);
+    setUniformArrayByIndex("lightTypes", lightType, id);
+    setUniformArrayByIndex("lightColors", glm::vec3(color.r, color.g, color.b), id);
+//    setUniformArrayByIndex("lightAttenuations", light.function, id);
 }
 
 void PhongShader::clearLight(int id) {
+    if (id < 0 || id >= MAX_NUM_LIGHTS)
+        return;
     setUniformArrayByIndex("lightColors", glm::vec3(0.0f), id);
 }
 

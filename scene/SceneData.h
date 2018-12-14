@@ -21,6 +21,17 @@ enum class PrimitiveType {
     PRIMITIVE_MESH
 };
 
+// used in raymarcher
+enum class TextureRole {
+    NO_TEX,
+    SPHERE_SMOOTH_TEX,
+    SPHERE_PATTERNED_TEX,
+    SPHERE_PATTERNED_BUMP,
+    QUAD_SMOOTH_TEX,
+    QUAD_PATTERNED_TEX,
+    QUAD_PATTERNED_BUMP
+};
+
 // Scene global color coefficients
 struct SceneGlobalData  {
     float ka = 1.0f;  // global ambient coefficient
@@ -31,7 +42,6 @@ struct SceneGlobalData  {
 
 // Data for a single light
 struct SceneLightData {
-    int id = -1;
     LightType type = LightType::LIGHT_POINT;
 
     RGBAf color {0.0f};
@@ -66,6 +76,7 @@ struct SceneFileMap {
     std::string filename;
     float repeatU = 0.0f;
     float repeatV = 0.0f;
+    TextureRole role = TextureRole::NO_TEX;
 };
 
 // Data for scene materials

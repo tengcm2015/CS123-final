@@ -18,7 +18,6 @@ static void initializeSceneLight(Scene &scene) {
     lightData.type = LightType::LIGHT_DIRECTIONAL,
     lightData.dir = lightDirection,
     lightData.color = {1,1,1,1},
-    lightData.id = 0;
 
     scene.addLight(lightData);
 }
@@ -56,6 +55,7 @@ void SceneBuilder::setSphereDataFromSettings() {
             m_sphereMaterial.textureMap.repeatU = 1;
             m_sphereMaterial.textureMap.repeatV = 1;
             m_sphereMaterial.blend = 1;
+            m_sphereMaterial.textureMap.role = TextureRole::SPHERE_SMOOTH_TEX;
             break;
 
         case TextureType::TEXTURE_PATTERNED:
@@ -64,11 +64,20 @@ void SceneBuilder::setSphereDataFromSettings() {
             m_sphereMaterial.textureMap.repeatU = 1;
             m_sphereMaterial.textureMap.repeatV = 1;
             m_sphereMaterial.blend = 1;
+            m_sphereMaterial.textureMap.role = TextureRole::SPHERE_PATTERNED_TEX;
+
+            m_sphereMaterial.bumpMap.isUsed = true;
+            m_sphereMaterial.bumpMap.filename = ":/textures/sphere_bump.jpg";
+            m_sphereMaterial.bumpMap.repeatU = 1;
+            m_sphereMaterial.bumpMap.repeatV = 1;
+            m_sphereMaterial.bumpMap.role = TextureRole::SPHERE_PATTERNED_BUMP;
+
             break;
 
         case TextureType::TEXTURE_NONE:
         default:
             m_sphereMaterial.textureMap.isUsed = false;
+            m_sphereMaterial.bumpMap.isUsed = false;
             break;
     }
 
@@ -105,6 +114,7 @@ void SceneBuilder::setBoxDataFromSettings() {
             m_quadMaterial.textureMap.repeatU = 1;
             m_quadMaterial.textureMap.repeatV = 1;
             m_quadMaterial.blend = 1;
+            m_quadMaterial.textureMap.role = TextureRole::QUAD_SMOOTH_TEX;
             break;
 
         case TextureType::TEXTURE_PATTERNED:
@@ -113,11 +123,16 @@ void SceneBuilder::setBoxDataFromSettings() {
             m_quadMaterial.textureMap.repeatU = 2;
             m_quadMaterial.textureMap.repeatV = 2;
             m_quadMaterial.blend = 1;
+            m_quadMaterial.textureMap.role = TextureRole::QUAD_PATTERNED_TEX;
+
+            // TODO: quad bump map
+
             break;
 
         case TextureType::TEXTURE_NONE:
         default:
             m_quadMaterial.textureMap.isUsed = false;
+            m_quadMaterial.bumpMap.isUsed = false;
             break;
     }
 
