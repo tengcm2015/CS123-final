@@ -157,7 +157,7 @@ void SceneBuilder::setBoxDataFromSettings() {
 const float STD_G = 9.80665;
 
 void SceneBuilder::setParametersFromSettings(Scene &scene) {
-    scene.setGravity(settings.gravity * STD_G / 10.f / 1000.f);
+    scene.setGravity(settings.gravity * STD_G / 10.f / 1000.f / 1000.f);
     setSphereDataFromSettings();
     setBoxDataFromSettings();
 }

@@ -10,7 +10,7 @@ using namespace std;
 namespace CS123 { namespace PHYSICS {
 
 #define EPSILON 0.1f
-#define RADIUS 0.3f
+#define RADIUS 0.25
 #define MIN_STEP_MSEC 10
 
 PhysicsScene::PhysicsScene()
@@ -37,6 +37,8 @@ void PhysicsScene::simulate(int msecLapsed) {
     }
 
     // TODO: update objects' translation matrices based on physics
+    // TODO: grab radius by using scale from transformation matrix,
+    // mass, friction, details on UI
 
     for (auto &op: m_object_ptrs) {
         if (op->getFlag() != PhysicsFlag::FLAG_DYNAMIC)
@@ -46,6 +48,8 @@ void PhysicsScene::simulate(int msecLapsed) {
         glm::vec3 oldLinearVelocity = op->getLinearVelocity();
         glm::vec3 newLinearVelocity = oldLinearVelocity;
         glm::vec3 curPos = op->getPosition().xyz();
+
+        curPos += oldLinearVelocity * (float) msecLapsed;
 
         if ( curPos.x + RADIUS > 1 && oldLinearVelocity.x > 0){
             newLinearVelocity.x = -newLinearVelocity.x;
@@ -70,8 +74,27 @@ void PhysicsScene::simulate(int msecLapsed) {
             newLinearVelocity.z = -newLinearVelocity.z;
          }
 
-        newLinearVelocity += m_data.gravity;
-        curPos = curPos + newLinearVelocity * (float) msecLapsed;
+
+        if (curPos.y + RADIUS > 1) {
+                curPos.y = 1 -RADIUS ;
+        }
+        if (curPos.y - RADIUS < -1) {
+                curPos.y = RADIUS -1;
+        }
+        if (curPos.x + RADIUS > 1) {
+                curPos.x = 1 -RADIUS;
+        }
+        if (curPos.x - RADIUS < -1) {
+                curPos.x = RADIUS -1;
+        }
+        if (curPos.z + RADIUS > 1) {
+                curPos.z = 1 - RADIUS;
+        }
+        if (curPos.z - RADIUS < -1) {
+                curPos.z = RADIUS -1;
+        }
+
+        newLinearVelocity += m_data.gravity * (float) msecLapsed; // gravity is right unit
 
         op->m_physicsTransform = glm::translate(curPos);
         op->setLinearVelocity(newLinearVelocity);
@@ -137,7 +160,6 @@ void PhysicsScene::simulate(int msecLapsed) {
                     curPos = curPos + op2_newLinearVelocity * (float) msecLapsed;
                     op2->m_physicsTransform = glm::translate(curPos);
                     op2->setLinearVelocity(op2_newLinearVelocity);
-
             }
 
 
