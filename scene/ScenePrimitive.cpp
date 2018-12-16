@@ -39,43 +39,55 @@ struct textureCacheNode {
 
 std::map<std::string, textureCacheNode> textureCache;
 
-ScenePrimitive::ScenePrimitive(const ScenePrimitiveData &data)
-: m_p1(-1), m_p2(-1), m_p3(-1)
-, m_modelTransform(1.0f)
-, m_data(data)
-, m_textureFileName()
-{
-    auto &material = m_data.material;
-    if (material.textureMap.isUsed)
-        __setTexture(material.textureMap.filename);
-}
-
-ScenePrimitive::~ScenePrimitive()
-{
-}
-
-void ScenePrimitive::__setTexture(std::string filename) {
+static std::string __setTexture(std::string filename) {
     if (textureCache.find(filename) == textureCache.end()) {
         // try to load image into cache
         QImage image(filename.data());
 
         if (image.isNull()) {
-            std::cerr << "failed open image: " <<filename << std::endl;
-            return;
+            std::cerr << "failed open image: " << filename << std::endl;
+            return "";
         }
 
         std::cout << "loaded image: " << filename << std::endl;
 
         textureCache.insert(std::make_pair(filename, image));
     }
-    m_textureFileName = filename;
+    return filename;
 }
 
-void ScenePrimitive::setTexture(const SceneFileMap &textureMap) {
+
+ScenePrimitive::ScenePrimitive(const ScenePrimitiveData &data)
+: m_p1(-1), m_p2(-1), m_p3(-1)
+, m_modelTransform(1.0f)
+, m_data(data)
+, m_textureFileName()
+, m_bumpFileName()
+{
+    auto &m = m_data.material;
+    if (m.textureMap.isUsed)
+        m_textureFileName = __setTexture(m.textureMap.filename);
+    if (m.bumpMap.isUsed)
+        m_bumpFileName = __setTexture(m.bumpMap.filename);
+}
+
+ScenePrimitive::~ScenePrimitive()
+{
+}
+
+ScenePrimitive& ScenePrimitive::setTexture(const SceneMaterial &m) {
+    m_data.material.blend = m.blend;
+    m_data.material.dispFactor = m.dispFactor;
+
     m_textureFileName.clear();
-    m_data.material.textureMap = textureMap;
-    if (textureMap.isUsed)
-        __setTexture(textureMap.filename);
+    m_data.material.textureMap = m.textureMap;
+    if (m.textureMap.isUsed)
+        m_textureFileName = __setTexture(m.textureMap.filename);
+
+    m_bumpFileName.clear();
+    m_data.material.bumpMap = m.bumpMap;
+    if (m.bumpMap.isUsed)
+        m_bumpFileName = __setTexture(m.bumpMap.filename);
 }
 
 bool ScenePrimitive::textureUsed() const {
@@ -84,6 +96,10 @@ bool ScenePrimitive::textureUsed() const {
 
 Texture2D &ScenePrimitive::getTexture2D() const {
     return *textureCache.at(m_textureFileName).texture2D_ptr;
+}
+
+Texture2D &ScenePrimitive::getBumpTex2D() const {
+    return *textureCache.at(m_bumpFileName).texture2D_ptr;
 }
 
 BGRA ScenePrimitive::sampleTexture(const glm::vec2 &uv, const glm::vec2 &repeatUV) const {

@@ -33,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // createBall/GL/textures
     QButtonGroup *texturesButtonGroup = new QButtonGroup;
+    m_buttonGroups.push_back(texturesButtonGroup);
 
     BIND(ChoiceBinding::bindRadioButtons(
             texturesButtonGroup,
@@ -83,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
             ui->sliderGravityZ, ui->valueGravityZ, settings.gravity.z, -10.f, 10.f))
 
     QButtonGroup *boxTexturesButtonGroup = new QButtonGroup;
+    m_buttonGroups.push_back(boxTexturesButtonGroup);
 
     // sceneSettings/boxTextures
     BIND(ChoiceBinding::bindRadioButtons(

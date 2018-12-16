@@ -36,7 +36,7 @@ void Settings::loadSettingsOrDefaults() {
     density = s.value("density", 1.f).toDouble();
 
     // createBall/physics/restitution
-    restitution = s.value("restitution", 1.f).toDouble();
+    restitution = s.value("restitution", .75f).toDouble();
 
     // createBall/physics/friction
     friction = s.value("friction", 1.f).toDouble();

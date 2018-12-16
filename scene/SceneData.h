@@ -95,6 +95,7 @@ struct SceneMaterial {
     float blend = 0.0f;
 
     SceneFileMap bumpMap;
+    float dispFactor = 0.0f;
 
     float shininess = 1.0f;
 

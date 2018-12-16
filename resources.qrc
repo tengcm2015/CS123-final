@@ -7,10 +7,11 @@
         <file alias="quad.vert">shaders/quad.vert</file>
     </qresource>
     <qresource prefix="/textures">
-        <file alias="sphere_patterned.jpg">textures/earthbump1k.jpg</file>
-        <file alias="sphere_bump.jpg">textures/earthmap1k.jpg</file>
         <file alias="sphere_smooth.jpg">textures/marble.jpg</file>
+        <file alias="sphere_patterned.jpg">textures/paper.jpg</file>
+        <file alias="sphere_bump.jpg">textures/paper.jpg</file>
         <file alias="box_smooth.jpg">textures/smooth_metal.jpg</file>
         <file alias="box_patterned.jpg">textures/metal_floors.jpg</file>
+        <file alias="box_bump.jpg">textures/metal_floors.jpg</file>
     </qresource>
 </RCC>

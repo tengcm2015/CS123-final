@@ -83,7 +83,7 @@ void PhysicsScene::simulate_sphere(int msecLapsed){
 
                         glm::vec3 curPos = op1->getPosition().xyz();
                         curPos = curPos + op1_newLinearVelocity * (float) msecLapsed;
-                        op1->m_physicsTransform = glm::translate(curPos) * glm::scale(glm::vec3(op2_radius*2.f));
+                        op1->m_physicsTransform = glm::translate(curPos) * glm::scale(glm::vec3(op1_radius*2.f));
                         op1->setLinearVelocity(op1_newLinearVelocity);
 
                         curPos = op2->getPosition().xyz();

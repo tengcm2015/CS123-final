@@ -43,43 +43,54 @@ void SceneBuilder::setSphereDataFromSettings() {
     spherePrimitiveData.meshfile = "";
 
     RGBAf color = byte2REAL(settings.ballColor);
-    m_sphereMaterial.cDiffuse  = color;
-    m_sphereMaterial.cAmbient  = color / 5.f;
-    m_sphereMaterial.cSpecular = RGBAf(1.0f);
-    m_sphereMaterial.shininess = settings.shininess;
+
+    // FIXME: use single texture for now
+    m_sphereMaterial.textureMap.filename = ":/textures/sphere_patterned.jpg";
+    m_sphereMaterial.bumpMap.filename = ":/textures/sphere_patterned.jpg";
 
     switch (settings.textureType) {
-        case TextureType::TEXTURE_SMOOTH:
-            m_sphereMaterial.textureMap.isUsed = true;
-            m_sphereMaterial.textureMap.filename = ":/textures/sphere_smooth.jpg";
-            m_sphereMaterial.textureMap.repeatU = 1;
-            m_sphereMaterial.textureMap.repeatV = 1;
-            m_sphereMaterial.blend = 1;
-            m_sphereMaterial.textureMap.role = TextureRole::SPHERE_SMOOTH_TEX;
-            break;
+    case TextureType::TEXTURE_SMOOTH:
+        color = {0.5, 0.5, 0.5, 1.0};
+        m_sphereMaterial.textureMap.isUsed = true;
+        //m_sphereMaterial.textureMap.filename = ":/textures/sphere_smooth.jpg";
+        m_sphereMaterial.textureMap.repeatU = 1;
+        m_sphereMaterial.textureMap.repeatV = 1;
+        m_sphereMaterial.blend = 0.5;
+        m_sphereMaterial.textureMap.role = TextureRole::SPHERE_SMOOTH_TEX;
 
-        case TextureType::TEXTURE_PATTERNED:
-            m_sphereMaterial.textureMap.isUsed = true;
-            m_sphereMaterial.textureMap.filename = ":/textures/sphere_patterned.jpg";
-            m_sphereMaterial.textureMap.repeatU = 1;
-            m_sphereMaterial.textureMap.repeatV = 1;
-            m_sphereMaterial.blend = 1;
-            m_sphereMaterial.textureMap.role = TextureRole::SPHERE_PATTERNED_TEX;
+        m_sphereMaterial.bumpMap.isUsed = false;
+        break;
 
-            m_sphereMaterial.bumpMap.isUsed = true;
-            m_sphereMaterial.bumpMap.filename = ":/textures/sphere_bump.jpg";
-            m_sphereMaterial.bumpMap.repeatU = 1;
-            m_sphereMaterial.bumpMap.repeatV = 1;
-            m_sphereMaterial.bumpMap.role = TextureRole::SPHERE_PATTERNED_BUMP;
+    case TextureType::TEXTURE_PATTERNED:
+        color = {0.5, 0.5, 0.5, 1.0};
+        m_sphereMaterial.textureMap.isUsed = true;
+        //m_sphereMaterial.textureMap.filename = ":/textures/sphere_patterned.jpg";
+        m_sphereMaterial.textureMap.repeatU = 1;
+        m_sphereMaterial.textureMap.repeatV = 1;
+        m_sphereMaterial.blend = 0.5;
+        m_sphereMaterial.textureMap.role = TextureRole::SPHERE_PATTERNED_TEX;
 
-            break;
+        m_sphereMaterial.bumpMap.isUsed = true;
+//        m_sphereMaterial.bumpMap.filename = ":/textures/sphere_bump.jpg";
+        m_sphereMaterial.bumpMap.repeatU = 1;
+        m_sphereMaterial.bumpMap.repeatV = 1;
+        m_sphereMaterial.dispFactor = 10.0;
+        m_sphereMaterial.bumpMap.role = TextureRole::SPHERE_PATTERNED_BUMP;
 
-        case TextureType::TEXTURE_NONE:
-        default:
-            m_sphereMaterial.textureMap.isUsed = false;
-            m_sphereMaterial.bumpMap.isUsed = false;
-            break;
+        break;
+
+    case TextureType::TEXTURE_NONE:
+    default:
+        m_sphereMaterial.textureMap.isUsed = false;
+        m_sphereMaterial.bumpMap.isUsed = false;
+        break;
     }
+
+    m_sphereMaterial.cDiffuse    = color;
+    m_sphereMaterial.cAmbient    = color / 5.f;
+    m_sphereMaterial.cSpecular   = RGBAf(1.0f);
+    m_sphereMaterial.cReflective = {0.5, 0.5, 0.5, 1.0};
+    m_sphereMaterial.shininess   = settings.shininess;
 
     spherePrimitiveData.material = m_sphereMaterial;
 
@@ -102,38 +113,50 @@ void SceneBuilder::setBoxDataFromSettings() {
     quadPrimitiveData.type = PrimitiveType::PRIMITIVE_QUAD;
     quadPrimitiveData.meshfile = "";
 
-    m_quadMaterial.cDiffuse  = {0.5f, 0.5f, 0.5f, 1.0f};
-    m_quadMaterial.cAmbient  = {0.1f, 0.1f, 0.1f, 1.0f};
-    m_quadMaterial.cSpecular = {1.0f, 1.0f, 1.0f, 1.0f};
-    m_quadMaterial.shininess = 64;
+    m_quadMaterial.cDiffuse      = {0.5f, 0.5f, 0.5f, 1.0f};
+    m_quadMaterial.cAmbient      = {0.1f, 0.1f, 0.1f, 1.0f};
+    m_quadMaterial.cSpecular     = {1.0f, 1.0f, 1.0f, 1.0f};
+    m_quadMaterial.cReflective   = {0.2f, 0.2f, 0.2f, 1.0f};
+    m_quadMaterial.shininess     = 64;
+
+    // FIXME: use single texture for now
+    m_quadMaterial.textureMap.filename = ":/textures/sphere_patterned.jpg";
+    m_quadMaterial.bumpMap.filename = ":/textures/sphere_patterned.jpg";
 
     switch (settings.boxTextureType) {
-        case TextureType::TEXTURE_SMOOTH:
-            m_quadMaterial.textureMap.isUsed = true;
-            m_quadMaterial.textureMap.filename = ":/textures/box_smooth.jpg";
-            m_quadMaterial.textureMap.repeatU = 1;
-            m_quadMaterial.textureMap.repeatV = 1;
-            m_quadMaterial.blend = 1;
-            m_quadMaterial.textureMap.role = TextureRole::QUAD_SMOOTH_TEX;
-            break;
+    case TextureType::TEXTURE_SMOOTH:
+        m_quadMaterial.textureMap.isUsed = true;
+//        m_quadMaterial.textureMap.filename = ":/textures/box_smooth.jpg";
+        m_quadMaterial.textureMap.repeatU = 1;
+        m_quadMaterial.textureMap.repeatV = 1;
+        m_quadMaterial.blend = 1.0;
+        m_quadMaterial.textureMap.role = TextureRole::QUAD_SMOOTH_TEX;
 
-        case TextureType::TEXTURE_PATTERNED:
-            m_quadMaterial.textureMap.isUsed = true;
-            m_quadMaterial.textureMap.filename = ":/textures/box_patterned.jpg";
-            m_quadMaterial.textureMap.repeatU = 2;
-            m_quadMaterial.textureMap.repeatV = 2;
-            m_quadMaterial.blend = 1;
-            m_quadMaterial.textureMap.role = TextureRole::QUAD_PATTERNED_TEX;
+        m_quadMaterial.bumpMap.isUsed = false;
+        break;
 
-            // TODO: quad bump map
+    case TextureType::TEXTURE_PATTERNED:
+        m_quadMaterial.textureMap.isUsed = true;
+//        m_quadMaterial.textureMap.filename = ":/textures/box_patterned.jpg";
+        m_quadMaterial.textureMap.repeatU = 1;
+        m_quadMaterial.textureMap.repeatV = 1;
+        m_quadMaterial.blend = 1.0;
+        m_quadMaterial.textureMap.role = TextureRole::QUAD_PATTERNED_TEX;
 
-            break;
+        m_quadMaterial.bumpMap.isUsed = true;
+//        m_quadMaterial.bumpMap.filename = ":/textures/box_bump.jpg";
+        m_quadMaterial.bumpMap.repeatU = 1;
+        m_quadMaterial.bumpMap.repeatV = 1;
+        m_quadMaterial.dispFactor = 1.0;
+        m_quadMaterial.bumpMap.role = TextureRole::QUAD_PATTERNED_BUMP;
 
-        case TextureType::TEXTURE_NONE:
-        default:
-            m_quadMaterial.textureMap.isUsed = false;
-            m_quadMaterial.bumpMap.isUsed = false;
-            break;
+        break;
+
+    case TextureType::TEXTURE_NONE:
+    default:
+        m_quadMaterial.textureMap.isUsed = false;
+        m_quadMaterial.bumpMap.isUsed = false;
+        break;
     }
 
     quadPrimitiveData.material = m_quadMaterial;
@@ -165,7 +188,7 @@ void SceneBuilder::setParametersFromSettings(Scene &scene) {
 void SceneBuilder::applyBoxSettings() {
     for (auto &pp: m_box_primitive_ptrs) {
         if (auto sp = pp.lock())
-            sp->setTexture(m_quadMaterial.textureMap);
+            sp->setTexture(m_quadMaterial);
     }
 }
 

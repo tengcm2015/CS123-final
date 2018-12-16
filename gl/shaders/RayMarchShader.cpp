@@ -4,7 +4,7 @@
 #include "scene/SceneData.h"
 #include "gl/GLDebug.h"
 
-#include <sstream>
+#include <iostream>
 
 namespace CS123 { namespace GL {
 
@@ -18,9 +18,43 @@ RayMarchShader::RayMarchShader(const std::string &vertexSource, const std::strin
 {
 }
 
+void RayMarchShader::setBoxFacePrimitive(const std::shared_ptr<ScenePrimitive> &pp) {
+    auto m = pp->getMaterial();
+
+    setUniform("faceAmbient"    , m.cAmbient.xyz()    );
+    setUniform("faceDiffuse"    , m.cDiffuse.xyz()    );
+    setUniform("faceReflective" , m.cReflective.xyz() );
+    setUniform("faceSpecular"   , m.cSpecular.xyz()   );
+//    setUniform("faceTransparent", m.cTransparent.xyz());
+//    setUniform("faceEmissive"   , m.cEmissive.xyz()   );
+
+    setUniform("faceShininess"  , m.shininess);
+//    setUniform("faceIOR"        , m.ior      );
+
+    if (m.textureMap.isUsed) {
+        setUniform("faceBlend", m.blend);
+        this->setSampler(m.textureMap.role, pp->getTexture2D());
+
+    } else {
+        setUniform("faceBlend", 0.0f);
+    }
+
+    if (m.bumpMap.isUsed) {
+        setUniform("faceDFact", m.dispFactor);
+        this->setSampler(m.textureMap.role, pp->getBumpTex2D());
+
+    } else {
+        setUniform("faceDFact", 0.0f);
+    }
+}
+
 void RayMarchShader::setPrimitive(const std::shared_ptr<ScenePrimitive> &pp, int id) {
     if (id < 0 || id >= MAX_PRIMITIVES)
         return;
+
+    if (pp->type() == PrimitiveType::PRIMITIVE_QUAD) {
+        return this->setBoxFacePrimitive(pp);
+    }
 
     setUniformArrayByIndex("primitiveType"     , UTILS::as_integer(pp->type()), id);
     setUniformArrayByIndex("primitiveTransform", pp->getModelTransform(), id);
@@ -31,11 +65,11 @@ void RayMarchShader::setPrimitive(const std::shared_ptr<ScenePrimitive> &pp, int
     setUniformArrayByIndex("primitiveDiffuse"    , m.cDiffuse.xyz()    , id);
     setUniformArrayByIndex("primitiveReflective" , m.cReflective.xyz() , id);
     setUniformArrayByIndex("primitiveSpecular"   , m.cSpecular.xyz()   , id);
-    setUniformArrayByIndex("primitiveTransparent", m.cTransparent.xyz(), id);
-    setUniformArrayByIndex("primitiveEmissive"   , m.cEmissive.xyz()   , id);
+//    setUniformArrayByIndex("primitiveTransparent", m.cTransparent.xyz(), id);
+//    setUniformArrayByIndex("primitiveEmissive"   , m.cEmissive.xyz()   , id);
 
     setUniformArrayByIndex("primitiveShininess"  , m.shininess, id);
-    setUniformArrayByIndex("primitiveIOR"        , m.ior      , id);
+//    setUniformArrayByIndex("primitiveIOR"        , m.ior      , id);
 
     if (m.textureMap.isUsed) {
         int texID = UTILS::as_integer(m.textureMap.role);
@@ -45,15 +79,18 @@ void RayMarchShader::setPrimitive(const std::shared_ptr<ScenePrimitive> &pp, int
 
     } else {
         setUniformArrayByIndex("primitiveTexID", UTILS::as_integer(TextureRole::NO_TEX), id);
+        setUniformArrayByIndex("primitiveBlend", 0.0f, id);
     }
 
     if (m.bumpMap.isUsed) {
         int texID = UTILS::as_integer(m.bumpMap.role);
         setUniformArrayByIndex("primitiveBumpID", texID, id);
+        setUniformArrayByIndex("primitiveDFact", m.dispFactor, id);
         this->setSampler(m.textureMap.role, pp->getTexture2D());
 
     } else {
         setUniformArrayByIndex("primitiveBumpID", UTILS::as_integer(TextureRole::NO_TEX), id);
+        setUniformArrayByIndex("primitiveDFact", 0.0f, id);
     }
 }
 
@@ -111,7 +148,6 @@ void RayMarchShader::clearLight(int id) {
     setUniformArrayByIndex("lightColors", glm::vec3(0.0f), id);
 }
 
-
 void RayMarchShader::setSampler(TextureRole role, const Texture2D &t) {
     std::string uniformName;
     switch (role) {
@@ -128,21 +164,23 @@ void RayMarchShader::setSampler(TextureRole role, const Texture2D &t) {
         break;
 
     case TextureRole::QUAD_SMOOTH_TEX:
-        uniformName = "quadSmoothTex";
+        uniformName = "quadTex";
         break;
 
     case TextureRole::QUAD_PATTERNED_TEX:
-        uniformName = "quadPatternedTex";
+        uniformName = "quadTex";
         break;
 
     case TextureRole::QUAD_PATTERNED_BUMP:
-        uniformName = "quadPatternedBump";
+        uniformName = "quadBump";
         break;
 
     case TextureRole::NO_TEX:
         return;
     }
 
+    // FIXME: use only one texture for the time being
+    uniformName = "spherePatternedTex";
     this->setTexture(uniformName, t);
 }
 

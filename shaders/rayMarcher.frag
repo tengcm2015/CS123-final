@@ -1,8 +1,8 @@
 #version 410 core
 
 // for debugging
-float map_hit = 0.0;
-
+vec3 dbg = vec3(0.0);
+#define FLOAT_INF (1.0 / 0.0) // requires GLSL 4.1+ to be infinite
 
 in vec2 clipCoord;
 
@@ -27,6 +27,7 @@ out vec4 fragColor;
 #define QUAD_PATTERNED_TEX    5
 #define QUAD_PATTERNED_BUMP   6
 
+#define INDEX_FACES -1
 
 // camera information
 uniform vec3  eye;
@@ -44,18 +45,18 @@ uniform vec3 lightColors    [MAX_LIGHTS];
 //uniform vec3 lightAttenuations[MAX_LIGHTS]; // Constant, linear, and quadratic term
 
 // Textures
-const int MAX_SAMPLERS = 6;
+const int MAX_SAMPLERS = 5;
 uniform sampler2D sphereSmoothTex;
 uniform sampler2D spherePatternedTex;
 uniform sampler2D spherePatternedBump;
-uniform sampler2D quadSmoothTex;
-uniform sampler2D quadPatternedTex;
-uniform sampler2D quadPatternedBump;
+uniform sampler2D quadTex;
+uniform sampler2D quadBump;
 
 // Uniform number limit: 4096
 // Primitive data
-const   int MAX_PRIMITIVES = 50;
+const   int MAX_PRIMITIVES = 20;
 
+// sphere only this time
 uniform int  primitiveType          [MAX_PRIMITIVES];
 uniform mat4 primitiveTransform     [MAX_PRIMITIVES];
 
@@ -70,10 +71,26 @@ uniform float primitiveShininess    [MAX_PRIMITIVES];
 uniform float primitiveIOR          [MAX_PRIMITIVES]; // index of refraction
 
 uniform float primitiveBlend [MAX_PRIMITIVES];
+uniform int primitiveDFact  [MAX_PRIMITIVES]; // Displacement Factor
 
 uniform int primitiveTexID  [MAX_PRIMITIVES];
 uniform int primitiveBumpID [MAX_PRIMITIVES];
 
+// face data
+uniform mat4 faceTransform;
+
+uniform vec3 faceDiffuse;
+uniform vec3 faceAmbient;
+uniform vec3 faceReflective;
+uniform vec3 faceSpecular;
+uniform vec3 faceTransparent;
+uniform vec3 faceEmissive;
+
+uniform float faceShininess;
+uniform float faceIOR; // index of refraction
+
+uniform float faceBlend;
+uniform float faceDFact; // Displacement Factor
 
 // Data structure for raymarching results
 struct PrimitiveDist {
@@ -81,11 +98,12 @@ struct PrimitiveDist {
     int index;
 };
 
+// FIXME: use ony one texture for the time being
 vec3 texCube( sampler2D sam, in vec3 p, in vec3 n )
 {
-    return vec3( abs(n.x) * texture(sam, p.yz)
-               + abs(n.y) * texture(sam, p.xz)
-               + abs(n.z) * texture(sam, p.xy)
+    return vec3( abs(n.x) * texture(spherePatternedTex, p.yz)
+               + abs(n.y) * texture(spherePatternedTex, p.xz)
+               + abs(n.z) * texture(spherePatternedTex, p.xy)
                );
 }
 
@@ -93,18 +111,18 @@ vec3 texCube( sampler2D sam, in vec3 p, in vec3 n )
 float texDisplace = 0.0;
 
 // Signed distance to the sphere.
-float sdSphere(vec3 p) {
-    float dist = length(p) - 0.5;
+float sdSphere(vec3 p, mat4 transform) {
+    float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
+//    mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
+    vec3 translationVector = transform[3].xyz;
+
+    float radius = scalingFactor / 2;
+    float dist = length(p - translationVector) - radius;
     return dist + texDisplace;
 }
 
 float dot2(vec3 v) { return dot(v,v); }
-float udQuad(vec3 p) {
-    vec3 a = vec3(-0.5, -0.5, 0.0);
-    vec3 b = vec3(-0.5,  0.5, 0.0);
-    vec3 c = vec3( 0.5,  0.5, 0.0);
-    vec3 d = vec3( 0.5, -0.5, 0.0);
-
+float udQuad(vec3 p, vec3 a, vec3 b, vec3 c, vec3 d) {
     vec3 ba = b - a; vec3 pa = p - a;
     vec3 cb = c - b; vec3 pb = p - b;
     vec3 dc = d - c; vec3 pc = p - c;
@@ -128,68 +146,117 @@ float udQuad(vec3 p) {
     return dist + texDisplace;
 }
 
+PrimitiveDist boxMap(vec3 p, vec3 rd) {
+    int   min_index = INDEX_FACES;
+    float min_dist = FLOAT_INF;
 
-PrimitiveDist map(vec3 p) {
-    int   min_index = -1;
-    float min_dist = 1.0 / 0.0; // requires GLSL 4.1+ to be infinite
+    float dist;
+    vec3 a, b, c, d;
 
-//    for (int i = 0; i < MAX_PRIMITIVES; i++) {
-    for (int i = 0; i < 10; i++) {
-        mat4 transform = primitiveTransform[i];
+    //+z
+    if (dot(vec3(0, 0, -1), rd) < 0) {
+        a = vec3(-1.0, -1.0, 1.0);
+        b = vec3(-1.0,  1.0, 1.0);
+        c = vec3( 1.0,  1.0, 1.0);
+        d = vec3( 1.0, -1.0, 1.0);
 
-        // assuming uniform scaling
-        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
-//        float scalingFactor = 1.0;
-//        mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
-//        vec3 translationVector = transform[3].xyz;
-        vec3 obj_p = vec3(inverse(transform) * vec4(p, 1.0));
+        dist = udQuad(p, a, b, c, d);
 
-        float d = min_dist;
-        switch (primitiveType[i]) {
-        case PRIMITIVE_SPHERE:
-            d = sdSphere(obj_p) * scalingFactor;
-            break;
-
-        case PRIMITIVE_QUAD:
-            if (obj_p.z > 0) // do not show if faced backward
-                d = udQuad(obj_p) * scalingFactor;
-            break;
-
-        default:
-            /* NOT IMPLEMENTED */
-            break;
+        if (dist < min_dist) {
+            min_dist = dist;
         }
+    }
 
-        if (d < min_dist) {
-            min_index = i;
-            min_dist = d;
+    //-z
+    if (dot(vec3(0, 0, 1), rd) < 0) {
+        a = vec3(-1.0, -1.0, -1.0);
+        b = vec3(-1.0,  1.0, -1.0);
+        c = vec3( 1.0,  1.0, -1.0);
+        d = vec3( 1.0, -1.0, -1.0);
+
+        dist = udQuad(p, a, b, c, d);
+
+        if (dist < min_dist) {
+            min_dist = dist;
+        }
+    }
+
+    //+y
+    if (dot(vec3(0, -1, 0), rd) < 0) {
+        a = vec3(-1.0, 1.0, -1.0);
+        b = vec3(-1.0, 1.0,  1.0);
+        c = vec3( 1.0, 1.0,  1.0);
+        d = vec3( 1.0, 1.0, -1.0);
+
+        dist = udQuad(p, a, b, c, d);
+
+        if (dist < min_dist) {
+            min_dist = dist;
+        }
+    }
+
+    //-y
+    if (dot(vec3(0, 1, 0), rd) < 0) {
+        a = vec3(-1.0, -1.0, -1.0);
+        b = vec3(-1.0, -1.0,  1.0);
+        c = vec3( 1.0, -1.0,  1.0);
+        d = vec3( 1.0, -1.0, -1.0);
+
+        dist = udQuad(p, a, b, c, d);
+
+        if (dist < min_dist) {
+            min_dist = dist;
+        }
+    }
+
+    //+x
+    if (dot(vec3(-1, 0, 0), rd) < 0) {
+        a = vec3(1.0, -1.0, -1.0);
+        b = vec3(1.0, -1.0,  1.0);
+        c = vec3(1.0,  1.0,  1.0);
+        d = vec3(1.0,  1.0, -1.0);
+
+        dist = udQuad(p, a, b, c, d);
+
+        if (dist < min_dist) {
+            min_dist = dist;
+        }
+    }
+
+    //-x
+    if (dot(vec3(1, 0, 0), rd) < 0) {
+        a = vec3(-1.0, -1.0, -1.0);
+        b = vec3(-1.0, -1.0,  1.0);
+        c = vec3(-1.0,  1.0,  1.0);
+        d = vec3(-1.0,  1.0, -1.0);
+
+        dist = udQuad(p, a, b, c, d);
+
+        if (dist < min_dist) {
+            min_dist = dist;
         }
     }
 
     return PrimitiveDist(min_dist, min_index);
 }
 
-PrimitiveDist mapNoPlane(vec3 p) {
-    int   min_index = -1;
-    float min_dist = 1.0 / 0.0; // requires GLSL 4.1+ to be infinite
+PrimitiveDist sphereMap(vec3 p) {
+    int   min_index;
+    float min_dist = FLOAT_INF;
 
-//    for (int i = 0; i < MAX_PRIMITIVES; i++) {
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < MAX_PRIMITIVES; i++) {
+        if (primitiveType[i] == PRIMITIVE_NONE)
+            continue;
+
         mat4 transform = primitiveTransform[i];
-        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
-        vec3 obj_p = vec3(inverse(transform) * vec4(p, 1.0));
 
-        float d = min_dist;
-        switch (primitiveType[i]) {
-        case PRIMITIVE_SPHERE:
-            d = sdSphere(obj_p) * scalingFactor;
-            break;
+        // assuming uniform scaling
+//        float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
+//        float scalingFactor = 1.0;
+//        mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
+//        vec3 translationVector = transform[3].xyz;
 
-            /* PRIMITIVE_QUAD IGNORED */
-        default:
-            /* NOT IMPLEMENTED */
-            break;
-        }
+        float d = sdSphere(p, transform);
 
         if (d < min_dist) {
             min_index = i;
@@ -202,13 +269,21 @@ PrimitiveDist mapNoPlane(vec3 p) {
 
 const float epsilon = 0.001;
 vec2 e = vec2(epsilon, 0.0); // For swizzling
-vec3 calcNormal(vec3 p) {
+vec3 calcBoxNormal(vec3 p, vec3 rd) {
     //return normalize(p);
-    return normalize(vec3( map(p + e.xyy).dist - map(p - e.xyy).dist
-                         , map(p + e.yxy).dist - map(p - e.yxy).dist
-                         , map(p + e.yyx).dist - map(p - e.yyx).dist
+    return normalize(vec3( boxMap(p + e.xyy, rd).dist - boxMap(p - e.xyy, rd).dist
+                         , boxMap(p + e.yxy, rd).dist - boxMap(p - e.yxy, rd).dist
+                         , boxMap(p + e.yyx, rd).dist - boxMap(p - e.yyx, rd).dist
                          ));
 }
+vec3 calcSphereNormal(vec3 p) {
+    //return normalize(p);
+    return normalize(vec3( sphereMap(p + e.xyy).dist - sphereMap(p - e.xyy).dist
+                         , sphereMap(p + e.yxy).dist - sphereMap(p - e.yxy).dist
+                         , sphereMap(p + e.yyx).dist - sphereMap(p - e.yyx).dist
+                         ));
+}
+
 
 float shadow(vec3 ro, vec3 rd, float k) {
     float marchDist = 0.001;
@@ -217,14 +292,15 @@ float shadow(vec3 ro, vec3 rd, float k) {
     float threshold = 0.001;
 
     for(int i = 0; i < 30; i++) {
-        if(marchDist > boundingVolume) continue;
-        float h = mapNoPlane(ro + rd * marchDist).dist;
+        if (marchDist > boundingVolume) continue;
+        float h = sphereMap(ro + rd * marchDist).dist;
         if (h < threshold) {
+            if (marchDist < threshold) break;
             darkness = 0.0;
             break;
         }
         darkness = min(darkness, k * h / marchDist);
-        marchDist += h * 0.7;
+        marchDist += h * 0.8;
     }
 
     return darkness;
@@ -239,14 +315,20 @@ PrimitiveDist raymarch(vec3 ro, vec3 rd) {
     PrimitiveDist ret = PrimitiveDist(-1.0, -1);
     for (int i = 0; i < 1000; i++) {
         // Fill in loop body
-        PrimitiveDist pd = map(ro + marchDist * rd);
+        vec3 p = ro + marchDist * rd;
+        PrimitiveDist sd = sphereMap(p);
+        PrimitiveDist pd = boxMap(p, rd);
+
+        if (sd.dist < pd.dist)
+            pd = sd;
+
         if (pd.dist < threshold) {
-            ret.dist = marchDist + pd.dist;
+            ret.dist = marchDist;
             ret.index = pd.index;
             break;
         }
 
-        marchDist += 0.2 * pd.dist;
+        marchDist += 0.8 * pd.dist;
         if (marchDist > boundingDist)
             break;
     }
@@ -262,37 +344,24 @@ vec3 getTex(int texID, vec3 pos, vec3 nor) {
         return texCube(spherePatternedTex, pos, nor);
     case SPHERE_PATTERNED_BUMP:
         return texCube(spherePatternedBump, pos, nor);
-    case QUAD_SMOOTH_TEX:
-        return texCube(quadSmoothTex, pos, nor);
-    case QUAD_PATTERNED_TEX:
-        return texCube(quadPatternedTex, pos, nor);
-    case QUAD_PATTERNED_BUMP:
-        return texCube(quadPatternedBump, pos, nor);
     default:
         return vec3(0.0);
     }
 }
 
-vec3 render(vec3 ro, vec3 rd, float t, int index) {
-    vec3 pos = ro + rd * t;
-    // Normal vector
-    vec3 nor = calcNormal(pos);
-
-    vec3 texture = getTex(primitiveTexID[index], pos, nor);
-    float blend = primitiveBlend[index];
-
-    texDisplace = getTex(primitiveBumpID[index], pos, nor).x;
+vec3 renderBox(vec3 rd, vec3 pos, vec3 nor) {
+    vec3 texture = texCube(quadTex, pos, nor);
+    texDisplace = (texCube(quadBump, pos, nor).x - 1.0) * faceDFact;
 
     // recalculate pos and nor with bump applied
-    pos = ro + rd * (t + texDisplace);
-    nor = calcNormal(pos);
+    pos += nor * texDisplace;
+    nor = calcBoxNormal(pos, rd);
 
-    // this useless line prevent GLSL optimization from overwriting primitiveShininess
-    fragColor = vec4(primitiveIOR[index]);
+    float blend = faceBlend;
 
     // Col is the final color of the current pixel.
     // Ambient
-    vec3 col = primitiveAmbient[index];
+    vec3 col = faceAmbient;
 
     for (int i = 0; i < MAX_LIGHTS; i++) {
         // Light vector
@@ -307,7 +376,53 @@ vec3 render(vec3 ro, vec3 rd, float t, int index) {
 
         // Add diffuse component
         float diffuseIntensity = clamp(dot(nor, posToLight), 0.0, 1.0);
-        vec3 diffuse = max(vec3(0), lightColors[i] * primitiveDiffuse[index] * diffuseIntensity);
+        vec3 diffuseColor = mix(faceDiffuse, texture, blend);
+        vec3 diffuse = max(vec3(0), lightColors[i] * diffuseColor * diffuseIntensity);
+
+        // Add specular component
+        vec3 lightReflection = normalize(reflect(-posToLight, nor));
+        vec3 eyeDirection = normalize(-rd);
+        float shininess = faceShininess;
+        float specIntensity = pow(clamp(dot(eyeDirection, lightReflection), 0.0, 1.0), shininess);
+        vec3 specular = max(vec3(0), lightColors[i] * faceSpecular * specIntensity);
+
+        float darkness = shadow(pos + nor * 0.001, posToLight, 18.0);
+
+        col += (diffuse + specular) * darkness;
+    }
+
+    return col;
+}
+
+vec3 render(vec3 rd, vec3 pos, vec3 nor, int index) {
+    vec3 texture = getTex(primitiveTexID[index], pos, nor);
+    texDisplace = (getTex(primitiveBumpID[index], pos, nor).x - 1.0) * primitiveDFact[index];
+
+    // recalculate pos and nor with bump applied
+    pos += nor * texDisplace;
+    nor = calcSphereNormal(pos);
+
+    float blend = primitiveBlend[index];
+
+    // Col is the final color of the current pixel.
+    // Ambient
+    vec3 col = primitiveAmbient[index];
+
+    for (int i = 0; i < MAX_LIGHTS; i++) {
+        // Light vector
+        vec3 posToLight = vec3(0.0);
+        // Point Light
+        if (lightTypes[i] == 0) {
+            posToLight = normalize(lightPositions[i] - pos);
+        } else if (lightTypes[i] == 1) {
+            // Dir Light
+            posToLight = normalize(-lightDirections[i]);
+        }
+
+        // Add diffuse component
+        float diffuseIntensity = clamp(dot(nor, posToLight), 0.0, 1.0);
+        vec3 diffuseColor = mix(primitiveDiffuse[index], texture, blend);
+        vec3 diffuse = max(vec3(0), lightColors[i] * diffuseColor * diffuseIntensity);
 
         // Add specular component
         vec3 lightReflection = normalize(reflect(-posToLight, nor));
@@ -316,12 +431,47 @@ vec3 render(vec3 ro, vec3 rd, float t, int index) {
         float specIntensity = pow(clamp(dot(eyeDirection, lightReflection), 0.0, 1.0), shininess);
         vec3 specular = max(vec3(0), lightColors[i] * primitiveSpecular[index] * specIntensity);
 
-        float darkness = shadow(pos, posToLight, 18.0);
+        float darkness = shadow(pos + nor * 0.001, posToLight, 18.0);
 
         col += (diffuse + specular) * darkness;
     }
 
-    return mix(col, texture, blend);
+    return col;
+}
+
+vec3 findColor(vec3 ro, vec3 rd) {
+    vec3 finalColor = vec3(0.0);
+    vec3 frac = vec3(1.0);
+
+    for (int raybounce = 0; raybounce < 5; raybounce++) {
+        // MARCH
+        PrimitiveDist rayMarchResult = raymarch(ro, rd);
+        if (rayMarchResult.dist < 0)
+            break;
+
+        vec3 pos = ro + rd * rayMarchResult.dist;
+        // Normal vector
+        vec3 nor;
+
+        if (rayMarchResult.index >= 0) {
+            nor = calcSphereNormal(pos);
+            finalColor += frac * render(rd, pos, nor, rayMarchResult.index);
+            frac *= primitiveReflective[rayMarchResult.index];
+
+        } else {
+            nor = calcBoxNormal(pos, rd);
+            finalColor += frac * renderBox(rd, pos, nor);
+            frac *= faceReflective;
+        }
+
+        if (length(frac) < 0.05)
+            break;
+
+        ro = pos + nor * 0.001; // change ray origin for next bounce
+        rd = reflect(rd, nor);
+    }
+
+    return finalColor;
 }
 
 void main() {
@@ -341,12 +491,8 @@ void main() {
                  + rayDirection.z * cameraForward;
     rayDirection = normalize(rayDirection);
 
-    // MARCH
-    PrimitiveDist rayMarchResult = raymarch(eye, rayDirection);
-    vec3 col = vec3(0);
-    if (rayMarchResult.index >= 0) {
-      	col = render(eye, rayDirection, rayMarchResult.dist, rayMarchResult.index);
-    }
+    fragColor = vec4(findColor(eye, rayDirection), 1.0);
 
-    fragColor = vec4(col, 1.0);
+    //for debugging
+    fragColor = fragColor * 1e-6 + vec4(vec3(dbg), 1.0);
 }

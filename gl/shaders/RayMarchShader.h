@@ -14,7 +14,7 @@ class RayMarchShader : public Shader {
 public:
     static const int MAX_NUM_LIGHTS = 10;
     static const int MAX_SAMPLERS = 6;
-    static const int MAX_PRIMITIVES = 50;
+    static const int MAX_PRIMITIVES = 20;
 
     RayMarchShader(const std::string &vertexSource, const std::string &fragmentSource);
     RayMarchShader(const std::string &vertexSource, const std::string &geometrySource, const std::string &fragmentSource);
@@ -27,6 +27,7 @@ public:
 
 private:
     void setSampler(TextureRole role, const Texture2D &t);
+    void setBoxFacePrimitive(const std::shared_ptr<ScenePrimitive> &pp);
 };
 
 }}

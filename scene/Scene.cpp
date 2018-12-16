@@ -3,8 +3,7 @@
 #include "ui/Settings.h"
 #include "lib/ResourceLoader.h"
 #include "gl/textures/Texture2D.h"
-
-#include <sstream>
+#include <iostream>
 #include "glm/gtx/transform.hpp"  // glm::translate, scale, rotate
 
 using namespace CS123::GL;
@@ -156,6 +155,7 @@ void Scene::renderGeometry(Shader* shader) {
             }
 
             pp->draw();
+
 
             if (pp->textureUsed()) {
                 m_phongShader->setUniform("useTexture", 0);

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>A CS123 Final</string>
+   <string>A CS123 Ball House</string>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>true</bool>
@@ -93,7 +93,7 @@
         <attribute name="title">
          <string>Create Ball</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_8">
+        <layout class="QVBoxLayout" name="verticalLayout_10">
          <item>
           <widget class="QFrame" name="frame">
            <property name="frameShape">
@@ -126,7 +126,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>308</width>
-                 <height>441</height>
+                 <height>375</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -324,7 +324,7 @@
                    <item>
                     <widget class="QRadioButton" name="radioTexturePatterned">
                      <property name="text">
-                      <string>Patterned (with bump mapping)</string>
+                      <string>Patterned (with bump &amp;mapping)</string>
                      </property>
                     </widget>
                    </item>
@@ -410,7 +410,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>308</width>
-                 <height>441</height>
+                 <height>375</height>
                 </rect>
                </property>
                <attribute name="label">
@@ -758,28 +758,13 @@
            </layout>
           </widget>
          </item>
-         <item>
-          <widget class="QPushButton" name="createBallButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>┌───────┐
-Create Ball
-└───────┘</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="sceneSettingTab">
         <attribute name="title">
          <string>Scene Settings</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_10">
+        <layout class="QVBoxLayout" name="verticalLayout_8">
          <item>
           <widget class="QGroupBox" name="gravityBox">
            <property name="sizePolicy">
@@ -937,17 +922,32 @@ Create Ball
            </property>
           </spacer>
          </item>
-         <item>
-          <widget class="QPushButton" name="clearSceneButton">
-           <property name="text">
-            <string>＿人人人人人人人＿
-＞　Clear Scene　＜
-￣Y^Y^Y^Y^Y^Y^Y￣</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="createBallButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>┌───────────┐
+Create Ball
+└───────────┘</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="clearSceneButton">
+       <property name="text">
+        <string>＿人人人人人人人＿
+＞　Clear Scene　＜
+￣Y^Y^Y^Y^Y^Y^Y￣</string>
+       </property>
       </widget>
      </item>
     </layout>

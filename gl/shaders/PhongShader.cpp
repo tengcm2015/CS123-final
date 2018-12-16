@@ -3,8 +3,6 @@
 #include "scene/SceneData.h"
 #include "gl/GLDebug.h"
 
-#include <sstream>
-
 namespace CS123 { namespace GL {
 
 

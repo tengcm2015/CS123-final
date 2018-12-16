@@ -8,7 +8,7 @@ collision features.
 
 Features:
 - Balls collision simulation
-- Raytracer on GPU
+- GPU Ray marching
 - Fast anti-aliasing filter
 - Bump mapping for texture
 
@@ -16,12 +16,12 @@ Design Architecture:
 We reused the code from Shape project to create balls and box, Sceneview project to
 handle camera view, Lab 10 Shadertoy as a framework for raytracing and tutorial on
 FXAA by simonrodriguez.
-We separate the physics simulation task from raytracing task so that each feature
-is independent from each other for the purpose of debugging.
+We separate the physics simulation task from ray marching task so that each feature
+is independent from each other for easier development.
 There's a Physics Data class dedicated to storing the input parameters from users and
 saved in each ball object.
-Phong shaders share the same data structure from Scene class so that modifications
-in Scene class can be applied directly to raymarching and shaders.
+Phong shaders share the same data structure of Scene class so that modifications
+in Scene class can be applied directly to both raymarching and phong shaders.
 
-At the current state, some speckles are shown in the walls and only one texture can
-be activated at the same time for one shader program.
+At the current state, we couldn't find a way to enable multiple textures in a single 
+shader program, so only one texture can be activated at the same time for one shader program.

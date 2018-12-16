@@ -22,12 +22,14 @@ public:
     SceneMaterial getMaterial()  const { return m_data.material; }
 
     bool textureUsed() const;
-    void setTexture(const SceneFileMap &textureFileMap);
+    ScenePrimitive& setTexture(const SceneMaterial &m);
     CS123::GL::Texture2D &getTexture2D() const;
+    CS123::GL::Texture2D &getBumpTex2D() const;
     BGRA sampleTexture(const glm::vec2 &uv, const glm::vec2 &repeatUV) const;
 
     virtual glm::mat4 getModelTransform() const { return m_modelTransform; }
     virtual ScenePrimitive& setModelTransform(const glm::mat4 &t) { m_modelTransform = t; return *this; }
+
 
     virtual ScenePrimitive& update(int p1 = 15, int p2 = 15, float p3 = 15.0);
 
@@ -37,14 +39,12 @@ public:
             float &t, glm::vec4 &normal, glm::vec2 &uv) const;
 
 protected:
-    void __setTexture(std::string filename);
-
     int m_p1, m_p2; float m_p3;
 
     glm::mat4 m_modelTransform;
     ScenePrimitiveData m_data;
 
-    std::string m_textureFileName;
+    std::string m_textureFileName, m_bumpFileName;
     std::unique_ptr<CS123Primitive> m_primitive_ptr;
 };
 
