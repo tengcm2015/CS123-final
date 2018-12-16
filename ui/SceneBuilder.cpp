@@ -157,7 +157,7 @@ void SceneBuilder::setBoxDataFromSettings() {
 const float STD_G = 9.80665;
 
 void SceneBuilder::setParametersFromSettings(Scene &scene) {
-    scene.setGravity(settings.gravity * STD_G / 10.f / 1000.f / 1000.f);
+    scene.setGravity(settings.gravity * STD_G  / 1000.f / 1000.f);
     setSphereDataFromSettings();
     setBoxDataFromSettings();
 }
@@ -273,6 +273,6 @@ void SceneBuilder::createBall(Scene &scene) {
     spherePhysics_ptr->setLinearVelocity(settings.velocity / 1000.f);
     spherePhysics_ptr->setModelTransform(extTransform);
 
-    sphereObject_ptr->pushMatrix(extTransform);
+    //sphereObject_ptr->pushMatrix(extTransform);
     sphereObject_ptr->assignPhysics(spherePhysics_ptr);
 }

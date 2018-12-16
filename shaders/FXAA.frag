@@ -1,3 +1,8 @@
+/*
+  Reference: http://blog.simonrodriguez.fr/articles/30-07-2016_implementing_fxaa.html
+  Implemented the FXAA tutorial with a bit modifications.
+  */
+
 #version 410 core
 
 #define EDGE_THRESHOLD_MIN  0.0312
@@ -6,7 +11,6 @@
 
 #define ITERATIONS 12
 const float QUALITY[12] = float[] (1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 2.0, 2.0, 2.0, 2.0, 4.0, 8.0);
-
 
 
 in vec2 uv;

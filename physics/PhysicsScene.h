@@ -28,6 +28,10 @@ private:
     PhysicsGlobalData m_data;
 
     std::vector<std::shared_ptr<PhysicsObject>> m_object_ptrs;
+
+    void simulate_sphere(int msecLapsed);
+
+    void simulate_box(int msecLapsed);
 };
 
 }}
