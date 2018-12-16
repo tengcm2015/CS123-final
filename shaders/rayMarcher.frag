@@ -71,7 +71,7 @@ uniform float primitiveShininess    [MAX_PRIMITIVES];
 uniform float primitiveIOR          [MAX_PRIMITIVES]; // index of refraction
 
 uniform float primitiveBlend [MAX_PRIMITIVES];
-uniform int primitiveDFact  [MAX_PRIMITIVES]; // Displacement Factor
+uniform float primitiveDFact [MAX_PRIMITIVES]; // Displacement Factor
 
 uniform int primitiveTexID  [MAX_PRIMITIVES];
 uniform int primitiveBumpID [MAX_PRIMITIVES];
@@ -107,11 +107,21 @@ vec3 texCube( sampler2D sam, in vec3 p, in vec3 n )
                );
 }
 
-// displacement resulted from bump map
-float texDisplace = 0.0;
+vec3 getTex(int texID, vec3 pos, vec3 nor) {
+    switch (texID) {
+    case SPHERE_SMOOTH_TEX:
+        return texCube(sphereSmoothTex, pos, nor);
+    case SPHERE_PATTERNED_TEX:
+        return texCube(spherePatternedTex, pos, nor);
+    case SPHERE_PATTERNED_BUMP:
+        return texCube(spherePatternedBump, pos, nor);
+    default:
+        return vec3(0.0);
+    }
+}
 
 // Signed distance to the sphere.
-float sdSphere(vec3 p, mat4 transform) {
+float sdSphere(vec3 p, mat4 transform, float texDisplace) {
     float scalingFactor = length(vec3(transform[0][0], transform[1][0], transform[2][0]));
 //    mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
     vec3 translationVector = transform[3].xyz;
@@ -122,7 +132,7 @@ float sdSphere(vec3 p, mat4 transform) {
 }
 
 float dot2(vec3 v) { return dot(v,v); }
-float udQuad(vec3 p, vec3 a, vec3 b, vec3 c, vec3 d) {
+float udQuad(vec3 p, vec3 a, vec3 b, vec3 c, vec3 d, float texDisplace) {
     vec3 ba = b - a; vec3 pa = p - a;
     vec3 cb = c - b; vec3 pb = p - b;
     vec3 dc = d - c; vec3 pc = p - c;
@@ -154,13 +164,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     vec3 a, b, c, d;
 
     //+z
-    if (dot(vec3(0, 0, -1), rd) < 0) {
+    vec3 nor = vec3(0, 0, -1);
+    if (dot(nor, rd) < 0) {
         a = vec3(-1.0, -1.0, 1.0);
         b = vec3(-1.0,  1.0, 1.0);
         c = vec3( 1.0,  1.0, 1.0);
         d = vec3( 1.0, -1.0, 1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -168,13 +180,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     }
 
     //-z
-    if (dot(vec3(0, 0, 1), rd) < 0) {
+    nor = vec3(0, 0, 1);
+    if (dot(nor, rd) < 0) {
         a = vec3(-1.0, -1.0, -1.0);
         b = vec3(-1.0,  1.0, -1.0);
         c = vec3( 1.0,  1.0, -1.0);
         d = vec3( 1.0, -1.0, -1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -182,13 +196,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     }
 
     //+y
-    if (dot(vec3(0, -1, 0), rd) < 0) {
+    nor = vec3(0, -1, 0);
+    if (dot(nor, rd) < 0) {
         a = vec3(-1.0, 1.0, -1.0);
         b = vec3(-1.0, 1.0,  1.0);
         c = vec3( 1.0, 1.0,  1.0);
         d = vec3( 1.0, 1.0, -1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -196,13 +212,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     }
 
     //-y
-    if (dot(vec3(0, 1, 0), rd) < 0) {
+    nor = vec3(0, 1, 0);
+    if (dot(nor, rd) < 0) {
         a = vec3(-1.0, -1.0, -1.0);
         b = vec3(-1.0, -1.0,  1.0);
         c = vec3( 1.0, -1.0,  1.0);
         d = vec3( 1.0, -1.0, -1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -210,13 +228,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     }
 
     //+x
-    if (dot(vec3(-1, 0, 0), rd) < 0) {
+    nor = vec3(-1, 0, 0);
+    if (dot(nor, rd) < 0) {
         a = vec3(1.0, -1.0, -1.0);
         b = vec3(1.0, -1.0,  1.0);
         c = vec3(1.0,  1.0,  1.0);
         d = vec3(1.0,  1.0, -1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -224,13 +244,15 @@ PrimitiveDist boxMap(vec3 p, vec3 rd) {
     }
 
     //-x
-    if (dot(vec3(1, 0, 0), rd) < 0) {
+    nor = vec3(1, 0, 0);
+    if (dot(nor, rd) < 0) {
         a = vec3(-1.0, -1.0, -1.0);
         b = vec3(-1.0, -1.0,  1.0);
         c = vec3(-1.0,  1.0,  1.0);
         d = vec3(-1.0,  1.0, -1.0);
 
-        dist = udQuad(p, a, b, c, d);
+        float texDisplace = (texCube(quadBump, p, nor).x - 1.0) * faceDFact;
+        dist = udQuad(p, a, b, c, d, texDisplace);
 
         if (dist < min_dist) {
             min_dist = dist;
@@ -256,7 +278,10 @@ PrimitiveDist sphereMap(vec3 p) {
 //        mat3 rotationMatrix = (1.0 / scalingFactor) * mat3(transform);
 //        vec3 translationVector = transform[3].xyz;
 
-        float d = sdSphere(p, transform);
+        vec3 translationVector = transform[3].xyz;
+        vec3 nor = normalize(p - translationVector);
+        float texDisplace = (getTex(primitiveBumpID[i], p, nor).x - 1.0) * primitiveDFact[i];
+        float d = sdSphere(p, transform, texDisplace);
 
         if (d < min_dist) {
             min_index = i;
@@ -336,26 +361,8 @@ PrimitiveDist raymarch(vec3 ro, vec3 rd) {
     return ret;
 }
 
-vec3 getTex(int texID, vec3 pos, vec3 nor) {
-    switch (texID) {
-    case SPHERE_SMOOTH_TEX:
-        return texCube(sphereSmoothTex, pos, nor);
-    case SPHERE_PATTERNED_TEX:
-        return texCube(spherePatternedTex, pos, nor);
-    case SPHERE_PATTERNED_BUMP:
-        return texCube(spherePatternedBump, pos, nor);
-    default:
-        return vec3(0.0);
-    }
-}
-
 vec3 renderBox(vec3 rd, vec3 pos, vec3 nor) {
     vec3 texture = texCube(quadTex, pos, nor);
-    texDisplace = (texCube(quadBump, pos, nor).x - 1.0) * faceDFact;
-
-    // recalculate pos and nor with bump applied
-    pos += nor * texDisplace;
-    nor = calcBoxNormal(pos, rd);
 
     float blend = faceBlend;
 
@@ -396,11 +403,6 @@ vec3 renderBox(vec3 rd, vec3 pos, vec3 nor) {
 
 vec3 render(vec3 rd, vec3 pos, vec3 nor, int index) {
     vec3 texture = getTex(primitiveTexID[index], pos, nor);
-    texDisplace = (getTex(primitiveBumpID[index], pos, nor).x - 1.0) * primitiveDFact[index];
-
-    // recalculate pos and nor with bump applied
-    pos += nor * texDisplace;
-    nor = calcSphereNormal(pos);
 
     float blend = primitiveBlend[index];
 
@@ -494,5 +496,5 @@ void main() {
     fragColor = vec4(findColor(eye, rayDirection), 1.0);
 
     //for debugging
-    fragColor = fragColor * 1e-6 + vec4(vec3(dbg), 1.0);
+//    fragColor = fragColor * 1e-6 + vec4(vec3(dbg), 1.0);
 }

@@ -74,7 +74,7 @@ void SceneBuilder::setSphereDataFromSettings() {
 //        m_sphereMaterial.bumpMap.filename = ":/textures/sphere_bump.jpg";
         m_sphereMaterial.bumpMap.repeatU = 1;
         m_sphereMaterial.bumpMap.repeatV = 1;
-        m_sphereMaterial.dispFactor = 10.0;
+        m_sphereMaterial.dispFactor = 0.1;
         m_sphereMaterial.bumpMap.role = TextureRole::SPHERE_PATTERNED_BUMP;
 
         break;
@@ -147,7 +147,7 @@ void SceneBuilder::setBoxDataFromSettings() {
 //        m_quadMaterial.bumpMap.filename = ":/textures/box_bump.jpg";
         m_quadMaterial.bumpMap.repeatU = 1;
         m_quadMaterial.bumpMap.repeatV = 1;
-        m_quadMaterial.dispFactor = 1.0;
+        m_quadMaterial.dispFactor = 0.1;
         m_quadMaterial.bumpMap.role = TextureRole::QUAD_PATTERNED_BUMP;
 
         break;
